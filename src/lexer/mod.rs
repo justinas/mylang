@@ -5,6 +5,33 @@ use std::io::Lines;
 #[derive(Debug, Eq, PartialEq)]
 pub enum Operator {
     Minus,
+    Plus,
+    Mul,
+    Div,
+
+    Lt,
+    Lte,
+    Gt,
+    Gte,
+    Eq,
+    Neq,
+    Not,
+
+    Assign,
+}
+
+impl Operator {
+    fn from_char(c: char) -> Self {
+        match c {
+            '+' => Operator::Plus,
+            '*' => Operator::Mul,
+            '/' => Operator::Div,
+            '>' => Operator::Gt,
+            '<' => Operator::Lt,
+            '!' => Operator::Not,
+            _ => unreachable!(),
+        }
+    }
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -65,7 +92,7 @@ impl Lexer {
         try!(r.read_to_string(&mut contents));
         let chars: Vec<char> = contents.chars().collect();
 
-        let mut l = Lexer { chars: chars.into() };
+        let l = Lexer { chars: chars.into() };
 
         Ok(l)
     }
@@ -89,6 +116,36 @@ impl Lexer {
                         }
                     }
                 }
+                '!' => {
+                    self.chars.next();
+                    if self.chars.peek().is_none() {
+                        Ok(Token::Op(Operator::Not))
+                    } else {
+                        match *self.chars.peek().unwrap() {
+                            '=' => {
+                                self.chars.next();
+                                Ok(Token::Op(Operator::Neq))
+                            }
+                            _ => Ok(Token::Op(Operator::Not)),
+                        }
+                    }
+                }
+                '=' => {
+                    self.chars.next();
+                    if self.chars.peek().is_none() {
+                        Ok(Token::Op(Operator::Assign))
+                    } else {
+                        match *self.chars.peek().unwrap() {
+                            '=' => {
+                                self.chars.next();
+                                Ok(Token::Op(Operator::Eq))
+                            }
+                            _ => Ok(Token::Op(Operator::Assign)),
+                        }
+                    }
+                }
+                '+' | '*' | '/' => Ok(Token::Op(Operator::from_char(self.chars.next().unwrap()))),
+                '<' | '>' => self.lex_ltgt(),
                 '0'...'9' => self.lex_const(false),
                 'A'...'Z' | 'a'...'z' => self.lex_ident(),
                 '"' => self.lex_str(),
@@ -101,7 +158,7 @@ impl Lexer {
 
             match res {
                 Ok(token) => tokens.push(token),
-                Err(e) => return Err((vec![], String::new())),
+                Err(e) => return Err((tokens, String::new())),
             }
         }
         Ok(tokens)
@@ -140,6 +197,26 @@ impl Lexer {
         }
 
         return Ok(Token::Ident(ident));
+    }
+
+    fn lex_ltgt(&mut self) -> Result<Token, ()> {
+        let this = self.chars.next().unwrap();
+        if self.chars.peek().is_none() {
+            return Ok(Token::Op(Operator::from_char(this)));
+        }
+        let op;
+        match (this, *self.chars.peek().unwrap()) {
+            ('>', '=') => {
+                self.chars.next();
+                op = Operator::Gte;
+            }
+            ('<', '=') => {
+                self.chars.next();
+                op = Operator::Lte;
+            }
+            _ => op = Operator::from_char(this),
+        }
+        Ok(Token::Op(op))
     }
 
     fn lex_str(&mut self) -> Result<Token, ()> {
