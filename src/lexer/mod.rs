@@ -3,6 +3,33 @@ use std::io;
 use std::io::Lines;
 
 #[derive(Debug, Eq, PartialEq)]
+pub enum Delimiter {
+    Comma,
+    LParen,
+    RParen,
+    LCurly,
+    RCurly,
+    LSquare,
+    RSquare,
+}
+
+impl Delimiter {
+    fn from_char(c: char) -> Self {
+        match c {
+            ',' => Delimiter::Comma,
+            '(' => Delimiter::LParen,
+            ')' => Delimiter::RParen,
+            '{' => Delimiter::LCurly,
+            '}' => Delimiter::RCurly,
+            '[' => Delimiter::LSquare,
+            ']' => Delimiter::RSquare,
+            _ => unreachable!(),
+        }
+    }
+}
+
+
+#[derive(Debug, Eq, PartialEq)]
 pub enum Operator {
     Minus,
     Plus,
@@ -37,6 +64,7 @@ impl Operator {
 #[derive(Debug, Eq, PartialEq)]
 pub enum Token {
     Const(String),
+    Delim(Delimiter),
     Ident(String),
     Op(Operator),
     String(String),
@@ -99,7 +127,7 @@ impl Lexer {
 
     pub fn lex(&mut self) -> Result<Vec<Token>, (Vec<Token>, String)> {
         let mut tokens: Vec<Token> = vec![];
-        loop {
+        'main: loop {
             if self.chars.peek().is_none() {
                 break;
             }
@@ -116,6 +144,7 @@ impl Lexer {
                         }
                     }
                 }
+
                 '!' => {
                     self.chars.next();
                     if self.chars.peek().is_none() {
@@ -130,6 +159,7 @@ impl Lexer {
                         }
                     }
                 }
+
                 '=' => {
                     self.chars.next();
                     if self.chars.peek().is_none() {
@@ -144,15 +174,61 @@ impl Lexer {
                         }
                     }
                 }
-                '+' | '*' | '/' => Ok(Token::Op(Operator::from_char(self.chars.next().unwrap()))),
+
+                '/' => {
+                    self.chars.next();
+                    if self.chars.peek().is_none() {
+                        Ok(Token::Op(Operator::Div))
+                    } else {
+                        match *self.chars.peek().unwrap() {
+                            // Single-line comment
+                            '/' => {
+                                self.chars.next();
+                                loop {
+                                    match self.chars.next() {
+                                        Some('\n') | None => continue 'main,
+                                        _ => (),
+                                    }
+                                }
+                            }
+                            '*' => {
+                                self.chars.next();
+                                loop {
+                                    match self.chars.next() {
+                                        Some('*') => {
+                                            match self.chars.next() {
+                                                Some('/') => continue 'main,
+                                                None => {
+                                                    return Err((tokens, format!("Unexpected EOF")))
+                                                }
+                                                _ => (),
+                                            }
+                                        }
+                                        Some(_) => (),
+                                        None => return Err((tokens, format!("Unexpected EOF"))),
+
+                                    }
+                                }
+                            }
+                            _ => Ok(Token::Op(Operator::Div)),
+                        }
+                    }
+                }
+
+                '+' | '*' => Ok(Token::Op(Operator::from_char(self.chars.next().unwrap()))),
+                ',' | '(' | ')' | '{' | '}' | '[' | ']' => {
+                    Ok(Token::Delim(Delimiter::from_char(self.chars.next().unwrap())))
+                }
                 '<' | '>' => self.lex_ltgt(),
                 '0'...'9' => self.lex_const(false),
                 'A'...'Z' | 'a'...'z' => self.lex_ident(),
                 '"' => self.lex_str(),
+
                 c if c.is_whitespace() => {
                     self.chars.next();
                     continue;
                 }
+
                 c => return Err((vec![], format!("Unexpected character `{}`", c))),
             };
 

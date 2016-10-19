@@ -1,4 +1,4 @@
-use super::{Lexer, Operator, Token};
+use super::{Delimiter, Lexer, Operator, Token};
 
 #[test]
 fn test_lex_ident() {
@@ -42,4 +42,63 @@ fn test_lex_op() {
                Token::Op(Operator::Eq),
                Token::Op(Operator::Assign),
                ])
+}
+
+#[test]
+fn test_lex_line_comment() {
+    let tokens = Lexer::new("+ 123 // this is ignored".as_bytes()).unwrap().lex().unwrap();
+    assert_eq!(tokens,
+               vec![Token::Op(Operator::Plus), Token::Const("123".to_string())])
+}
+
+#[test]
+fn test_lex_multiline_comment() {
+    let source = r###"
+        a + /*
+        multi-line
+        comment
+        */ *"###;
+
+    let tokens = Lexer::new(source.as_bytes()).unwrap().lex().unwrap();
+    assert_eq!(tokens,
+               vec![Token::Ident("a".to_string()),
+                    Token::Op(Operator::Plus),
+                    Token::Op(Operator::Mul)])
+}
+
+#[test]
+fn test_lex_multiline_comment_no_end() {
+    {
+        let source = r###"
+        a + /*
+        multi-line
+        comment
+        "###;
+
+        assert!(Lexer::new(source.as_bytes()).unwrap().lex().is_err());
+    }
+    {
+        let source = r###"
+        a + /*
+        multi-line
+        comment
+        *"###;
+
+        assert!(Lexer::new(source.as_bytes()).unwrap().lex().is_err());
+    }
+}
+
+#[test]
+fn test_lex_delimiters() {
+    let tokens = Lexer::new("()[]{},".as_bytes()).unwrap().lex().unwrap();
+    assert_eq!(tokens,
+               vec![
+               Token::Delim(Delimiter::LParen),
+               Token::Delim(Delimiter::RParen),
+               Token::Delim(Delimiter::LSquare),
+               Token::Delim(Delimiter::RSquare),
+               Token::Delim(Delimiter::LCurly),
+               Token::Delim(Delimiter::RCurly),
+               Token::Delim(Delimiter::Comma),
+    ])
 }
