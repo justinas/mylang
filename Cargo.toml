@@ -1,0 +1,6 @@
+[package]
+name = "mylang"
+version = "0.1.0"
+authors = ["Justinas Stankevicius <justinas.stankevicius@adform.com>"]
+
+[dependencies]
