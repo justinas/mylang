@@ -2,6 +2,8 @@ use std;
 use std::io;
 use std::io::Lines;
 
+pub use self::error::{Error, ErrorVariant};
+
 #[derive(Debug, Eq, PartialEq)]
 pub enum Delimiter {
     Comma,
@@ -125,7 +127,15 @@ impl Lexer {
         Ok(l)
     }
 
-    pub fn lex(&mut self) -> Result<Vec<Token>, (Vec<Token>, String)> {
+    fn error(&self, var: ErrorVariant) -> Error {
+        Error {
+            line: self.chars.line_pos,
+            chr: self.chars.char_pos,
+            var: var,
+        }
+    }
+
+    pub fn lex(&mut self) -> Result<Vec<Token>, (Vec<Token>, Error)> {
         let mut tokens: Vec<Token> = vec![];
         'main: loop {
             if self.chars.peek().is_none() {
@@ -199,13 +209,14 @@ impl Lexer {
                                             match self.chars.next() {
                                                 Some('/') => continue 'main,
                                                 None => {
-                                                    return Err((tokens, format!("Unexpected EOF")))
+                                                    return Err((tokens,
+                                                                self.error(ErrorVariant::EOF)))
                                                 }
                                                 _ => (),
                                             }
                                         }
                                         Some(_) => (),
-                                        None => return Err((tokens, format!("Unexpected EOF"))),
+                                        None => return Err((tokens, self.error(ErrorVariant::EOF))),
 
                                     }
                                 }
@@ -229,18 +240,25 @@ impl Lexer {
                     continue;
                 }
 
-                c => return Err((vec![], format!("Unexpected character `{}`", c))),
+                c => return Err((tokens, self.error(ErrorVariant::UnknownCharacter))),
             };
 
             match res {
                 Ok(token) => tokens.push(token),
-                Err(e) => return Err((tokens, String::new())),
+                Err(e) => {
+                    let err = Error {
+                        line: self.chars.line_pos,
+                        chr: self.chars.char_pos,
+                        var: e,
+                    };
+                    return Err((tokens, err));
+                }
             }
         }
         Ok(tokens)
     }
 
-    fn lex_const(&mut self, negative: bool) -> Result<Token, ()> {
+    fn lex_const(&mut self, negative: bool) -> Result<Token, ErrorVariant> {
         let mut val = String::new();
         if negative {
             val.push('-');
@@ -252,7 +270,7 @@ impl Lexer {
             }
             match *self.chars.peek().unwrap() {
                 '0'...'9' => val.push(self.chars.next().unwrap()),
-                'A'...'Z' | 'a'...'z' => return Err(()), // Unexpected symbol in integer constant
+                'A'...'Z' | 'a'...'z' => return Err(ErrorVariant::UnknownCharacter),
                 _ => break,
             }
         }
@@ -260,7 +278,7 @@ impl Lexer {
         return Ok(Token::Const(val));
     }
 
-    fn lex_ident(&mut self) -> Result<Token, ()> {
+    fn lex_ident(&mut self) -> Result<Token, ErrorVariant> {
         let mut ident = String::new();
         loop {
             if self.chars.peek().is_none() {
@@ -275,7 +293,7 @@ impl Lexer {
         return Ok(Token::Ident(ident));
     }
 
-    fn lex_ltgt(&mut self) -> Result<Token, ()> {
+    fn lex_ltgt(&mut self) -> Result<Token, ErrorVariant> {
         let this = self.chars.next().unwrap();
         if self.chars.peek().is_none() {
             return Ok(Token::Op(Operator::from_char(this)));
@@ -295,24 +313,29 @@ impl Lexer {
         Ok(Token::Op(op))
     }
 
-    fn lex_str(&mut self) -> Result<Token, ()> {
+    fn lex_str(&mut self) -> Result<Token, ErrorVariant> {
         let mut val = String::new();
         assert!(self.chars.next() == Some('"'));
 
         loop {
             if self.chars.peek().is_none() {
-                return Err(()); // Unexpected EOF
+                return Err(ErrorVariant::EOF);
             }
             match self.chars.next() {
                 Some('\\') => {
-                    match self.chars.next() {
-                        Some('\\') => val.push('\\'),
-                        Some('\"') => val.push('\"'),
-                        Some('n') => val.push('\n'),
-                        Some('t') => val.push('\t'),
-                        Some(c) => return Err(()), // Invalid escape char
-                        None => return Err(()), // Unexpected EOF
+                    if self.chars.peek().is_none() {
+                        return Err(ErrorVariant::EOF);
                     }
+                    match *self.chars.peek().unwrap() {
+                        '\\' => val.push('\\'),
+                        '\"' => val.push('\"'),
+                        'n' => val.push('\n'),
+                        't' => val.push('\t'),
+                        _ => {
+                            return Err(ErrorVariant::InvalidStringEscape);
+                        }
+                    }
+                    self.chars.next();
                 }
                 Some('"') => break,
                 Some(c) => val.push(c),
@@ -324,4 +347,5 @@ impl Lexer {
     }
 }
 
+mod error;
 mod test;

@@ -1,4 +1,4 @@
-use super::{Delimiter, Lexer, Operator, Token};
+use super::*;
 
 #[test]
 fn test_lex_ident() {
@@ -101,4 +101,41 @@ fn test_lex_delimiters() {
                Token::Delim(Delimiter::RCurly),
                Token::Delim(Delimiter::Comma),
     ])
+}
+
+#[test]
+fn test_lexer_errors() {
+    {
+        let result = Lexer::new("a /*".as_bytes()).unwrap().lex().err().unwrap();
+        assert_eq!(result.0.len(), 1);
+        let err = result.1;
+        assert_eq!(err.var, ErrorVariant::EOF);
+        assert_eq!(err.line, 1);
+        assert_eq!(err.chr, 5);
+    }
+
+    {
+        let result = Lexer::new(r###""a\x""###.as_bytes()).unwrap().lex().err().unwrap();
+        let err = result.1;
+        assert_eq!(err.var, ErrorVariant::InvalidStringEscape);
+        assert_eq!(err.line, 1);
+        assert_eq!(err.chr, 4);
+    }
+
+    {
+        let result = Lexer::new(r###""a"###.as_bytes()).unwrap().lex().err().unwrap();
+        let err = result.1;
+        assert_eq!(err.var, ErrorVariant::EOF);
+        assert_eq!(err.line, 1);
+        assert_eq!(err.chr, 3);
+    }
+
+    {
+        let result = Lexer::new("ab č".as_bytes()).unwrap().lex().err().unwrap();
+        assert_eq!(result.0.len(), 1);
+        let err = result.1;
+        assert_eq!(err.var, ErrorVariant::UnknownCharacter);
+        assert_eq!(err.line, 1);
+        assert_eq!(err.chr, 4);
+    }
 }
