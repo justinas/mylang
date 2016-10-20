@@ -7,6 +7,7 @@ pub use self::error::{Error, ErrorVariant};
 #[derive(Debug, Eq, PartialEq)]
 pub enum Delimiter {
     Comma,
+    Semicolon,
     LParen,
     RParen,
     LCurly,
@@ -19,6 +20,7 @@ impl Delimiter {
     fn from_char(c: char) -> Self {
         match c {
             ',' => Delimiter::Comma,
+            ';' => Delimiter::Semicolon,
             '(' => Delimiter::LParen,
             ')' => Delimiter::RParen,
             '{' => Delimiter::LCurly,
@@ -30,6 +32,35 @@ impl Delimiter {
     }
 }
 
+#[derive(Debug, Eq, PartialEq)]
+pub enum Keyword {
+    Byte,
+    Else,
+    Fn,
+    If,
+    Int,
+    Return,
+    Var,
+    Void,
+    While,
+}
+
+impl Keyword {
+    fn from_ident(ident: &str) -> Option<Keyword> {
+        match ident {
+            "byte" => Some(Keyword::Byte),
+            "else" => Some(Keyword::Else),
+            "fn" => Some(Keyword::Fn),
+            "if" => Some(Keyword::If),
+            "int" => Some(Keyword::Int),
+            "return" => Some(Keyword::Return),
+            "var" => Some(Keyword::Var),
+            "void" => Some(Keyword::Void),
+            "while" => Some(Keyword::While),
+            _ => None,
+        }
+    }
+}
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Operator {
@@ -68,6 +99,7 @@ pub enum Token {
     Const(String),
     Delim(Delimiter),
     Ident(String),
+    Keyword(Keyword),
     Op(Operator),
     String(String),
 }
@@ -135,7 +167,7 @@ impl Lexer {
         }
     }
 
-    pub fn lex(&mut self) -> Result<Vec<Token>, (Vec<Token>, Error)> {
+    pub fn lex(mut self) -> Result<Vec<Token>, (Vec<Token>, Error)> {
         let mut tokens: Vec<Token> = vec![];
         'main: loop {
             if self.chars.peek().is_none() {
@@ -227,7 +259,7 @@ impl Lexer {
                 }
 
                 '+' | '*' => Ok(Token::Op(Operator::from_char(self.chars.next().unwrap()))),
-                ',' | '(' | ')' | '{' | '}' | '[' | ']' => {
+                ',' | ';' | '(' | ')' | '{' | '}' | '[' | ']' => {
                     Ok(Token::Delim(Delimiter::from_char(self.chars.next().unwrap())))
                 }
                 '<' | '>' => self.lex_ltgt(),
@@ -275,7 +307,7 @@ impl Lexer {
             }
         }
 
-        return Ok(Token::Const(val));
+        Ok(Token::Const(val))
     }
 
     fn lex_ident(&mut self) -> Result<Token, ErrorVariant> {
@@ -290,7 +322,9 @@ impl Lexer {
             }
         }
 
-        return Ok(Token::Ident(ident));
+        Ok(Keyword::from_ident(&ident)
+            .map(|k| Token::Keyword(k))
+            .unwrap_or(Token::Ident(ident)))
     }
 
     fn lex_ltgt(&mut self) -> Result<Token, ErrorVariant> {
@@ -343,7 +377,7 @@ impl Lexer {
             }
         }
 
-        return Ok(Token::String(val));
+        Ok(Token::String(val))
     }
 }
 
