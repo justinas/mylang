@@ -1,0 +1,36 @@
+digraph finite_state_machine {
+    rankdir=LR;
+    node [shape = circle];
+    BEGIN -> IDENT [label="[A-Za-z]"];
+    IDENT -> IDENT [label="[A-Za-z0-9]"];
+    IDENT -> BEGIN [label="*; Ident", style="dashed"];
+
+    BEGIN -> CONST [label="[0-9]"];
+    CONST -> CONST [label="[0-9]"];
+    CONST -> BEGIN [label="[^A-Za-z0-9]; Const", style="dashed"];
+
+    BEGIN -> STR [label="\""];
+    STR -> STR [label="[^\"]"];
+    STR -> STR_ESC [label="\\"];
+    STR_ESC -> STR [label="[nt\"\\\\]"];
+    STR -> BEGIN [label="\"; :String"];
+
+    BEGIN -> BEGIN [label="[\\[\\]{}(),;]; Delim"];
+    BEGIN -> BEGIN [label="[+*]; Operator"];
+
+    BEGIN -> LTE [label="<"];
+    LTE -> BEGIN [label="[^=]; Operator(Lt)", style="dashed"];
+    LTE -> BEGIN [label="=; Operator"];
+
+    BEGIN -> GTE [label=">"];
+    GTE -> BEGIN [label="[^=]; Operator(Gt)", style="dashed"];
+    GTE -> BEGIN [label="=; Operator"];
+    
+    BEGIN -> ASSIGNEQ [label="="];
+    ASSIGNEQ -> BEGIN [label="=; Operator(Eq)"];
+    ASSIGNEQ -> BEGIN [label="*; Operator(Assign)", style="dashed"];
+
+    BEGIN -> NOTNEQ [label="!"];
+    NOTNEQ -> BEGIN [label="=; Operator(Neq)"];
+    NOTNEQ -> BEGIN [label="[^=]; Operator(Not)", style="dashed"];
+}
