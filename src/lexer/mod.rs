@@ -104,6 +104,9 @@ pub enum Token {
     String(String),
 }
 
+#[derive(Debug, Eq, PartialEq)]
+pub struct TokenAt(Token, u64, u64);
+
 struct CharIterator {
     it: std::iter::Peekable<std::vec::IntoIter<char>>,
     line_pos: u64,
@@ -167,12 +170,14 @@ impl Lexer {
         }
     }
 
-    pub fn lex(mut self) -> Result<Vec<Token>, (Vec<Token>, Error)> {
-        let mut tokens: Vec<Token> = vec![];
+    pub fn lex(mut self) -> Result<Vec<TokenAt>, (Vec<TokenAt>, Error)> {
+        let mut tokens: Vec<TokenAt> = vec![];
         'main: loop {
             if self.chars.peek().is_none() {
                 break;
             }
+
+            let saved_pos = (self.chars.line_pos, self.chars.char_pos);
 
             let res = match *self.chars.peek().unwrap() {
                 '-' => {
@@ -276,7 +281,7 @@ impl Lexer {
             };
 
             match res {
-                Ok(token) => tokens.push(token),
+                Ok(token) => tokens.push(TokenAt(token, saved_pos.0, saved_pos.1)),
                 Err(e) => {
                     let err = Error {
                         line: self.chars.line_pos,

@@ -1,8 +1,14 @@
 use super::*;
 
+
+#[cfg(test)]
+fn trylex(body: &str) -> Vec<Token> {
+    Lexer::new(body.as_bytes()).unwrap().lex().unwrap().into_iter().map(|t| t.0).collect()
+}
+
 #[test]
 fn test_lex_ident() {
-    let tokens = Lexer::new("aaa bb2b ccc".as_bytes()).unwrap().lex().unwrap();
+    let tokens = trylex("aaa bb2b ccc");
     assert_eq!(tokens.len(), 3);
     assert_eq!(tokens[0], Token::Ident("aaa".to_string()));
     assert_eq!(tokens[1], Token::Ident("bb2b".to_string()));
@@ -11,14 +17,14 @@ fn test_lex_ident() {
 
 #[test]
 fn test_lex_str() {
-    let tokens = Lexer::new("aaa \"bbb\\nccc d\\\"dd\"".as_bytes()).unwrap().lex().unwrap();
+    let tokens = trylex("aaa \"bbb\\nccc d\\\"dd\"");
     assert_eq!(tokens.len(), 2);
     assert_eq!(tokens[1], Token::String("bbb\nccc d\"dd".to_string()));
 }
 
 #[test]
 fn test_lex_const() {
-    let tokens = Lexer::new("aaa -123 456-".as_bytes()).unwrap().lex().unwrap();
+    let tokens = trylex("aaa -123 456-");
     assert_eq!(tokens.len(), 4);
     assert_eq!(tokens[1], Token::Const("-123".to_string()));
     assert_eq!(tokens[2], Token::Const("456".to_string()));
@@ -26,7 +32,7 @@ fn test_lex_const() {
 
 #[test]
 fn test_lex_op() {
-    let tokens = Lexer::new("-+*/>>=<=<!=! ===".as_bytes()).unwrap().lex().unwrap();
+    let tokens = trylex("-+*/>>=<=<!=! ===");
     assert_eq!(tokens,
                vec![
                Token::Op(Operator::Minus),
@@ -46,7 +52,7 @@ fn test_lex_op() {
 
 #[test]
 fn test_lex_line_comment() {
-    let tokens = Lexer::new("+ 123 // this is ignored".as_bytes()).unwrap().lex().unwrap();
+    let tokens = trylex("+ 123 // this is ignored");
     assert_eq!(tokens,
                vec![Token::Op(Operator::Plus), Token::Const("123".to_string())])
 }
@@ -59,7 +65,7 @@ fn test_lex_multiline_comment() {
         comment
         */ *"###;
 
-    let tokens = Lexer::new(source.as_bytes()).unwrap().lex().unwrap();
+    let tokens = trylex(source);
     assert_eq!(tokens,
                vec![Token::Ident("a".to_string()),
                     Token::Op(Operator::Plus),
@@ -90,7 +96,7 @@ fn test_lex_multiline_comment_no_end() {
 
 #[test]
 fn test_lex_delimiters() {
-    let tokens = Lexer::new("()[]{},".as_bytes()).unwrap().lex().unwrap();
+    let tokens = trylex("()[]{},");
     assert_eq!(tokens,
                vec![
                Token::Delim(Delimiter::LParen),

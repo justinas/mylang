@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::{stderr, Write};
 
-fn pretty_print(tokens: &Vec<lexer::Token>) {
+fn pretty_print(tokens: &Vec<lexer::TokenAt>) {
     println!("Tokens:");
     for t in tokens {
         println!("    {:?}", t);
