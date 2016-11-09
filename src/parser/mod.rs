@@ -1,4 +1,4 @@
-pub use super::lexer::{Keyword, Operator, Token, TokenAt};
+pub use super::lexer::{Delimiter, Keyword, Operator, Token, TokenAt};
 use self::expr::Expr;
 use self::expr::parse_expr;
 
@@ -14,9 +14,24 @@ pub struct DeclStmt {
     pub typ: Type,
 }
 
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct FnArg {
+    pub name: String,
+    pub typ: Type,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct FnItem {
+    pub block: Stmt,
+    pub name: String,
+    pub params: Vec<FnArg>,
+}
+
 #[derive(Debug, Eq, PartialEq)]
 pub enum Stmt {
     Assign(AssignStmt),
+    Block(Vec<Stmt>),
     Decl(DeclStmt),
 }
 
@@ -25,6 +40,80 @@ pub enum Type {
     Byte,
     Int,
     Void,
+}
+
+pub fn parse_fn(tokens: &[Token]) -> (Option<FnItem>, &[Token]) {
+    let mut remaining = tokens;
+    let fn_name;
+    let block;
+
+    if remaining.get(0) != Some(&Token::Keyword(Keyword::Fn)) {
+        return (None, tokens);
+    }
+    remaining = &remaining[1..];
+
+    if let Some(&Token::Ident(ref s)) = remaining.get(0) {
+        fn_name = s.clone();
+    } else {
+        return (None, tokens);
+    }
+    remaining = &remaining[1..];
+
+    if remaining.get(0) != Some(&Token::Delim(Delimiter::LParen)) {
+        return (None, tokens);
+    }
+    remaining = &remaining[1..];
+
+    // TODO: parse parameters
+
+    if remaining.get(0) != Some(&Token::Delim(Delimiter::RParen)) {
+        return (None, tokens);
+    }
+    remaining = &remaining[1..];
+
+    match parse_block(remaining) {
+        (Ok(s), remain) => {
+            block = s;
+            remaining = remain;
+        }
+        _ => return (None, tokens),
+    }
+
+    (Some(FnItem {
+        block: block,
+        name: fn_name,
+        params: vec![],
+    }),
+     remaining)
+}
+
+pub fn parse_block(tokens: &[Token]) -> (Result<Stmt, ()>, &[Token]) {
+    if tokens.get(0) != Some(&Token::Delim(Delimiter::LCurly)) {
+        return (Err(()), tokens);
+    }
+
+    let mut block_stmts = Vec::new();
+    let mut remaining = &tokens[1..];
+
+    loop {
+        match parse_stmt(remaining) {
+            (Some(s), r) => {
+                block_stmts.push(s);
+                remaining = r;
+            }
+            _ => break,
+        }
+        if remaining.get(0) != Some(&Token::Delim(Delimiter::Semicolon)) {
+            return (Err(()), remaining);
+        }
+        remaining = &remaining[1..];
+    }
+
+    if remaining.get(0) != Some(&Token::Delim(Delimiter::RCurly)) {
+        return (Err(()), remaining);
+    }
+
+    (Ok(Stmt::Block(block_stmts)), &remaining[1..])
 }
 
 pub fn parse_stmt(tokens: &[Token]) -> (Option<Stmt>, &[Token]) {

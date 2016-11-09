@@ -105,7 +105,7 @@ pub enum Token {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct TokenAt(Token, u64, u64);
+pub struct TokenAt(pub Token, pub u64, pub u64);
 
 struct CharIterator {
     it: std::iter::Peekable<std::vec::IntoIter<char>>,

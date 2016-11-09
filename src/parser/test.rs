@@ -1,6 +1,54 @@
 use super::*;
 use super::expr::*;
 
+#[cfg(test)]
+fn str_to_tokens(s: &str) -> Vec<Token> {
+    let lexer = super::super::lexer::Lexer::new(s.as_bytes()).unwrap();
+    let tokens_at = lexer.lex().unwrap();
+    tokens_at.into_iter().map(|t| t.0).collect::<Vec<_>>()
+}
+
+#[test]
+fn test_parse_fn() {
+    {
+        let tokens = str_to_tokens("fn dothis() { var a byte; a = 3 / 4 + 2;}");
+        let func = parse_fn(&tokens).0.unwrap();
+        match func.block {
+            Stmt::Block(v) => assert_eq!(v.len(), 2),
+            _ => unreachable!(),
+        }
+        assert_eq!(func.name, "dothis".to_string());
+        assert_eq!(func.params, vec![]);
+    }
+}
+
+#[test]
+fn test_parse_block() {
+    {
+        let tokens = &[Token::Delim(Delimiter::LCurly), Token::Delim(Delimiter::RCurly)];
+        let res = parse_block(tokens);
+        assert_eq!(res.0.unwrap(), Stmt::Block(vec![]));
+        assert_eq!(res.1, &[]);
+    }
+
+
+    {
+        let tokens = str_to_tokens("{ var a byte; a = 3 / 4 + 2;}");
+        let res = parse_block(&tokens);
+        let block = res.0.unwrap();
+        let stmts = match block {
+            Stmt::Block(s) => s,
+            _ => panic!(),
+        };
+        assert_eq!(stmts.len(), 2);
+        assert_eq!(stmts[0],
+                   Stmt::Decl(DeclStmt {
+                       ident: "a".into(),
+                       typ: Type::Byte,
+                   }));
+    }
+}
+
 #[test]
 fn test_parse_stmt() {
     {
