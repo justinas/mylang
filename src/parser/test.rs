@@ -52,7 +52,7 @@ fn test_parse_product() {
     {
         let tokens = &[Token::Const("123".into())];
         let res = parse_product(tokens);
-        assert_eq!(res.0.unwrap(), Product::Single(Atom::Const("123".into())));
+        assert_eq!(res.0.unwrap(), Expr::Atom(Atom::Const("123".into())));
         assert!(res.1.is_empty());
     }
 
@@ -64,13 +64,12 @@ fn test_parse_product() {
                        Token::Op(Operator::Div),
                        Token::Ident("b".into())];
         let res = parse_product(tokens);
-        let expected = Product::Div(
-            Box::new(Product::Div(
-                Box::new(Product::Single(Atom::Const("123".into()))),
-                Box::new(Product::Single(Atom::Ident("a".into()))),
-            )),
-            Box::new(Product::Single(Atom::Ident("b".into()))),
-        );
+        let expected =
+            Expr::Bin(Box::new(Expr::Bin(Box::new(Expr::Atom(Atom::Const("123".into()))),
+                                         Box::new(Expr::Atom(Atom::Ident("a".into()))),
+                                         Operation::Div)),
+                      Box::new(Expr::Atom(Atom::Ident("b".into()))),
+                      Operation::Div);
         assert_eq!(res.0.unwrap(), expected);
         assert!(res.1.is_empty());
     }
@@ -83,13 +82,12 @@ fn test_parse_product() {
                        Token::Op(Operator::Mul),
                        Token::Ident("b".into())];
         let res = parse_product(tokens);
-        let expected = Product::Mul(
-            Box::new(Product::Mul(
-                Box::new(Product::Single(Atom::Const("123".into()))),
-                Box::new(Product::Single(Atom::Ident("a".into()))),
-            )),
-            Box::new(Product::Single(Atom::Ident("b".into()))),
-        );
+        let expected =
+            Expr::Bin(Box::new(Expr::Bin(Box::new(Expr::Atom(Atom::Const("123".into()))),
+                                         Box::new(Expr::Atom(Atom::Ident("a".into()))),
+                                         Operation::Mul)),
+                      Box::new(Expr::Atom(Atom::Ident("b".into()))),
+                      Operation::Mul);
         assert_eq!(res.0.unwrap(), expected);
         assert!(res.1.is_empty());
     }
@@ -102,13 +100,12 @@ fn test_parse_product() {
                        Token::Op(Operator::Div),
                        Token::Ident("b".into())];
         let res = parse_product(tokens);
-        let expected = Product::Div(
-            Box::new(Product::Mul(
-                Box::new(Product::Single(Atom::Const("123".into()))),
-                Box::new(Product::Single(Atom::Ident("a".into()))),
-            )),
-            Box::new(Product::Single(Atom::Ident("b".into()))),
-        );
+        let expected =
+            Expr::Bin(Box::new(Expr::Bin(Box::new(Expr::Atom(Atom::Const("123".into()))),
+                                         Box::new(Expr::Atom(Atom::Ident("a".into()))),
+                                         Operation::Mul)),
+                      Box::new(Expr::Atom(Atom::Ident("b".into()))),
+                      Operation::Div);
         assert_eq!(res.0.unwrap(), expected);
         assert!(res.1.is_empty());
     }

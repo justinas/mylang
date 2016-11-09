@@ -12,13 +12,15 @@ pub enum Atom {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct Expr;
+pub enum Expr {
+    Atom(Atom),
+    Bin(Box<Expr>, Box<Expr>, Operation),
+}
 
 #[derive(Debug, Eq, PartialEq)]
-pub enum Product {
-    Single(Atom),
-    Div(Box<Product>, Box<Product>),
-    Mul(Box<Product>, Box<Product>),
+pub enum Operation {
+    Div,
+    Mul,
 }
 
 fn parse_expr(tokens: &[Token]) -> (Option<()>, &[Token]) {
@@ -32,24 +34,25 @@ fn parse_comparison(tokens: &[Token]) -> (Option<()>, &[Token]) {
     // TODO: comparison compop summation
 
     // TODO: summation
-    parse_summation(tokens)
+    parse_sum(tokens)
 }
 
-fn parse_summation(tokens: &[Token]) -> (Option<()>, &[Token]) {
-    // TODO: summation + product, summation - product
+fn parse_sum(tokens: &[Token]) -> (Option<()>, &[Token]) {
+    let product_res = parse_product(tokens);
+    if product_res.0.is_none() {
+        return (None, product_res.1);
+    }
 
-    // TODO: product
-    parse_product(tokens);
-    return (None, &[]);
+    (None, &[])
 }
 
-pub fn parse_product(tokens: &[Token]) -> (Option<Product>, &[Token]) {
+pub fn parse_product(tokens: &[Token]) -> (Option<Expr>, &[Token]) {
     let atom_res = parse_atom(tokens);
     if atom_res.0.is_none() {
         return (None, atom_res.1);
     }
 
-    let mut product = atom_res.0.map(Product::Single).unwrap();
+    let mut expr = atom_res.0.map(Expr::Atom).unwrap();
     let mut my_tokens = atom_res.1;
 
     loop {
@@ -57,7 +60,7 @@ pub fn parse_product(tokens: &[Token]) -> (Option<Product>, &[Token]) {
             Some(&Token::Op(Operator::Div)) => {
                 match parse_atom(&my_tokens[1..]) {
                     (Some(a), remaining) => {
-                        product = Product::Div(Box::new(product), Box::new(Product::Single(a)));
+                        expr = Expr::Bin(Box::new(expr), Box::new(Expr::Atom(a)), Operation::Div);
                         my_tokens = remaining;
                     }
                     _ => return (None, my_tokens),
@@ -66,7 +69,7 @@ pub fn parse_product(tokens: &[Token]) -> (Option<Product>, &[Token]) {
             Some(&Token::Op(Operator::Mul)) => {
                 match parse_atom(&my_tokens[1..]) {
                     (Some(a), remaining) => {
-                        product = Product::Mul(Box::new(product), Box::new(Product::Single(a)));
+                        expr = Expr::Bin(Box::new(expr), Box::new(Expr::Atom(a)), Operation::Mul);
                         my_tokens = remaining;
                     }
                     _ => return (None, my_tokens),
@@ -75,7 +78,7 @@ pub fn parse_product(tokens: &[Token]) -> (Option<Product>, &[Token]) {
             _ => break,
         }
     }
-    (Some(product), my_tokens)
+    (Some(expr), my_tokens)
 }
 
 pub fn parse_atom(tokens: &[Token]) -> (Option<Atom>, &[Token]) {
