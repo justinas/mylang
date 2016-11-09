@@ -19,6 +19,9 @@ pub enum Expr {
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Operation {
+    Add,
+    Sub,
+
     Div,
     Mul,
 }
@@ -34,16 +37,43 @@ fn parse_comparison(tokens: &[Token]) -> (Option<()>, &[Token]) {
     // TODO: comparison compop summation
 
     // TODO: summation
-    parse_sum(tokens)
+    parse_sum(tokens);
+    (None, &[])
 }
 
-fn parse_sum(tokens: &[Token]) -> (Option<()>, &[Token]) {
+pub fn parse_sum(tokens: &[Token]) -> (Option<Expr>, &[Token]) {
     let product_res = parse_product(tokens);
     if product_res.0.is_none() {
         return (None, product_res.1);
     }
 
-    (None, &[])
+    let mut expr = product_res.0.unwrap();
+    let mut my_tokens = product_res.1;
+
+    loop {
+        match my_tokens.get(0) {
+            Some(&Token::Op(Operator::Plus)) => {
+                match parse_product(&my_tokens[1..]) {
+                    (Some(p), remaining) => {
+                        expr = Expr::Bin(Box::new(expr), Box::new(p), Operation::Add);
+                        my_tokens = remaining;
+                    }
+                    _ => return (None, my_tokens),
+                }
+            }
+            Some(&Token::Op(Operator::Minus)) => {
+                match parse_product(&my_tokens[1..]) {
+                    (Some(p), remaining) => {
+                        expr = Expr::Bin(Box::new(expr), Box::new(p), Operation::Sub);
+                        my_tokens = remaining;
+                    }
+                    _ => return (None, my_tokens),
+                }
+            }
+            _ => break,
+        }
+    }
+    (Some(expr), my_tokens)
 }
 
 pub fn parse_product(tokens: &[Token]) -> (Option<Expr>, &[Token]) {
