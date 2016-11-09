@@ -9,6 +9,34 @@ fn str_to_tokens(s: &str) -> Vec<Token> {
 }
 
 #[test]
+fn test_parse() {
+    {
+        let body = r#"
+        fn dothis() {
+            var a byte;
+            var b byte;
+            a = 3 / 4 + 2;
+            b = a + 1;
+        }
+
+        fn dothat() {
+            c = 15 * 6;
+        }
+        "#;
+        let tokens = str_to_tokens(body);
+        let funcs = parse(&tokens).unwrap();
+        assert_eq!(funcs.len(), 2);
+        assert_eq!(funcs[0].name, "dothis");
+        if let Stmt::Block(ref v) = funcs[0].block {
+            assert_eq!(v.len(), 4);
+        } else {
+            unreachable!();
+        }
+        assert_eq!(funcs[1].name, "dothat");
+    }
+}
+
+#[test]
 fn test_parse_fn() {
     {
         let tokens = str_to_tokens("fn dothis() { var a byte; a = 3 / 4 + 2;}");

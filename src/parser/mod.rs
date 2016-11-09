@@ -42,6 +42,21 @@ pub enum Type {
     Void,
 }
 
+pub fn parse(tokens: &[Token]) -> Result<Vec<FnItem>, ()> {
+    let mut tokens = tokens;
+    let mut funcs = vec![];
+    while tokens != &[] {
+        match parse_fn(tokens) {
+            (Some(func), remain) => {
+                funcs.push(func);
+                tokens = remain;
+            }
+            (None, remain) => return Err(()),
+        }
+    }
+    Ok(funcs)
+}
+
 pub fn parse_fn(tokens: &[Token]) -> (Option<FnItem>, &[Token]) {
     let mut remaining = tokens;
     let fn_name;
