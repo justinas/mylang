@@ -1,0 +1,105 @@
+use super::{Keyword, Operator, Token, TokenAt};
+
+// expr == logexpr
+
+#[derive(Debug, Eq, PartialEq)]
+pub enum Atom {
+    Const(String),
+    FnCall,
+    Ident(String),
+    Neg(Box<Atom>),
+    PExpr(Box<Expr>),
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct Expr;
+
+#[derive(Debug, Eq, PartialEq)]
+pub enum Product {
+    Single(Atom),
+    Div(Box<Product>, Box<Product>),
+    Mul(Box<Product>, Box<Product>),
+}
+
+fn parse_expr(tokens: &[Token]) -> (Option<()>, &[Token]) {
+    // TODO: logexpr && comparison, logexpr || comparison
+
+    // TODO: comparison
+    parse_comparison(tokens)
+}
+
+fn parse_comparison(tokens: &[Token]) -> (Option<()>, &[Token]) {
+    // TODO: comparison compop summation
+
+    // TODO: summation
+    parse_summation(tokens)
+}
+
+fn parse_summation(tokens: &[Token]) -> (Option<()>, &[Token]) {
+    // TODO: summation + product, summation - product
+
+    // TODO: product
+    parse_product(tokens);
+    return (None, &[]);
+}
+
+pub fn parse_product(tokens: &[Token]) -> (Option<Product>, &[Token]) {
+    let atom_res = parse_atom(tokens);
+    if atom_res.0.is_none() {
+        return (None, atom_res.1);
+    }
+
+    let mut product = atom_res.0.map(Product::Single).unwrap();
+    let mut my_tokens = atom_res.1;
+
+    loop {
+        match my_tokens.get(0) {
+            Some(&Token::Op(Operator::Div)) => {
+                match parse_atom(&my_tokens[1..]) {
+                    (Some(a), remaining) => {
+                        product = Product::Div(Box::new(product), Box::new(Product::Single(a)));
+                        my_tokens = remaining;
+                    }
+                    _ => return (None, my_tokens),
+                }
+            }
+            Some(&Token::Op(Operator::Mul)) => {
+                match parse_atom(&my_tokens[1..]) {
+                    (Some(a), remaining) => {
+                        product = Product::Mul(Box::new(product), Box::new(Product::Single(a)));
+                        my_tokens = remaining;
+                    }
+                    _ => return (None, my_tokens),
+                }
+            }
+            _ => break,
+        }
+    }
+    (Some(product), my_tokens)
+}
+
+pub fn parse_atom(tokens: &[Token]) -> (Option<Atom>, &[Token]) {
+    if tokens.is_empty() {
+        return (None, tokens);
+    }
+
+    if tokens[0] == Token::Op(Operator::Not) {
+        if let (Some(a), remaining) = parse_atom(&tokens[1..]) {
+            return (Some(Atom::Neg(Box::new(a))), remaining);
+        }
+    }
+
+    // TODO: fncall
+
+    if let Token::Ident(ref s) = tokens[0] {
+        return (Some(Atom::Ident(s.clone())), &tokens[1..]);
+    }
+
+    if let Token::Const(ref s) = tokens[0] {
+        return (Some(Atom::Const(s.clone())), &tokens[1..]);
+    }
+
+    // TODO: pexpr
+
+    (None, tokens)
+}
