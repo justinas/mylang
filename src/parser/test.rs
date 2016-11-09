@@ -2,17 +2,73 @@ use super::*;
 use super::expr::*;
 
 #[test]
+fn test_parse_stmt() {
+    {
+        let tokens = &[Token::Ident("abc".into()),
+                       Token::Op(Operator::Assign),
+                       Token::Const("2".into()),
+                       Token::Op(Operator::Plus),
+                       Token::Const("2".into())];
+
+        let res = parse_stmt(tokens);
+        let stmt = res.0.unwrap();
+        let expected = Stmt::Assign(AssignStmt {
+            ident: "abc".into(),
+            expr: Expr::Bin(Box::new(Expr::Atom(Atom::Const("2".into()))),
+                            Box::new(Expr::Atom(Atom::Const("2".into()))),
+                            Operation::Add),
+        });
+        assert_eq!(stmt, expected);
+    }
+
+    {
+        let tokens = &[Token::Keyword(Keyword::Var),
+                       Token::Ident("foo".to_string()),
+                       Token::Keyword(Keyword::Byte)];
+        let (stmt, remaining) = parse_stmt(tokens);
+        assert_eq!(stmt.unwrap(),
+                   Stmt::Decl(DeclStmt {
+                       ident: "foo".to_string(),
+                       typ: Type::Byte,
+                   }));
+        assert_eq!(remaining, &[]);
+    }
+
+}
+
+#[test]
+fn test_parse_assignstmt() {
+    {
+        let tokens = &[Token::Ident("abc".into()),
+                       Token::Op(Operator::Assign),
+                       Token::Const("2".into()),
+                       Token::Op(Operator::Plus),
+                       Token::Const("2".into())];
+
+        let res = parse_assignstmt(tokens);
+        let stmt = res.0.unwrap();
+        let expected = AssignStmt {
+            ident: "abc".into(),
+            expr: Expr::Bin(Box::new(Expr::Atom(Atom::Const("2".into()))),
+                            Box::new(Expr::Atom(Atom::Const("2".into()))),
+                            Operation::Add),
+        };
+        assert_eq!(stmt, expected);
+    }
+}
+
+#[test]
 fn test_parse_declstmt() {
     {
         let tokens = &[Token::Keyword(Keyword::Var),
                        Token::Ident("foo".to_string()),
                        Token::Keyword(Keyword::Byte)];
         let (declstmt, remaining) = parse_declstmt(tokens);
-        assert_eq!(declstmt,
-                   Some(DeclStmt {
+        assert_eq!(declstmt.unwrap(),
+                   DeclStmt {
                        ident: "foo".to_string(),
                        typ: Type::Byte,
-                   }));
+                   });
         assert_eq!(remaining, &[]);
     }
 
@@ -47,6 +103,7 @@ fn test_parse_atom() {
     }
 }
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[test]
 fn test_parse_product() {
     {
@@ -111,11 +168,12 @@ fn test_parse_product() {
     }
 }
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[test]
 fn test_parse_sum() {
     {
         let tokens = &[Token::Const("123".into())];
-        let res = parse_product(tokens);
+        let res = parse_sum(tokens);
         assert_eq!(res.0.unwrap(), Expr::Atom(Atom::Const("123".into())));
         assert!(res.1.is_empty());
     }

@@ -26,19 +26,17 @@ pub enum Operation {
     Mul,
 }
 
-fn parse_expr(tokens: &[Token]) -> (Option<()>, &[Token]) {
+pub fn parse_expr(tokens: &[Token]) -> (Option<Expr>, &[Token]) {
     // TODO: logexpr && comparison, logexpr || comparison
 
     // TODO: comparison
     parse_comparison(tokens)
 }
 
-fn parse_comparison(tokens: &[Token]) -> (Option<()>, &[Token]) {
+fn parse_comparison(tokens: &[Token]) -> (Option<Expr>, &[Token]) {
     // TODO: comparison compop summation
 
-    // TODO: summation
-    parse_sum(tokens);
-    (None, &[])
+    parse_sum(tokens)
 }
 
 pub fn parse_sum(tokens: &[Token]) -> (Option<Expr>, &[Token]) {
