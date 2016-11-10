@@ -21,6 +21,9 @@ fn test_parse() {
 
         fn dothat() {
             c = 15 * 6;
+            if c <= 5 {
+                c = c * 2;
+            }
         }
         "#;
         let tokens = str_to_tokens(body);
@@ -29,6 +32,7 @@ fn test_parse() {
         assert_eq!(funcs[0].name, "dothis");
         assert_eq!(funcs[0].block.0.len(), 4);
         assert_eq!(funcs[1].name, "dothat");
+        assert_eq!(funcs[1].block.0.len(), 2);
     }
 }
 

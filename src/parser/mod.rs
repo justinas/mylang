@@ -133,6 +133,9 @@ pub fn parse_block(tokens: &[Token]) -> (Result<Block, ()>, &[Token]) {
     let mut remaining = &tokens[1..];
 
     loop {
+        while let Some(&Token::Delim(Delimiter::Semicolon)) = remaining.get(0) {
+            remaining = &remaining[1..];
+        }
         match parse_stmt(remaining) {
             (Some(s), r) => {
                 block_stmts.push(s);
@@ -140,10 +143,19 @@ pub fn parse_block(tokens: &[Token]) -> (Result<Block, ()>, &[Token]) {
             }
             _ => break,
         }
-        if remaining.get(0) != Some(&Token::Delim(Delimiter::Semicolon)) {
-            return (Err(()), remaining);
+        match (remaining.get(0), block_stmts.last().unwrap()) {
+            // Semicolons are always okay after a statement
+            (Some(&Token::Delim(Delimiter::Semicolon)), _) => (),
+
+            // It's okay NOT to follow block statements by a semicolon
+            (_, &Stmt::Block(..)) => (),
+            // Ditto
+            (_, &Stmt::If(..)) => (),
+            // Ditto
+            (_, &Stmt::While(..)) => (),
+
+            _ => break,
         }
-        remaining = &remaining[1..];
     }
 
     if remaining.get(0) != Some(&Token::Delim(Delimiter::RCurly)) {
