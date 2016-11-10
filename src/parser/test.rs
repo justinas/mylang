@@ -177,6 +177,16 @@ fn test_parse_atom() {
                    Atom::Neg(Box::new(Atom::Ident("abc".into()))));
         assert!(res.1.is_empty());
     }
+
+
+    {
+        let tokens = &[Token::Delim(Delimiter::LParen),
+                       Token::Const("2".into()),
+                       Token::Delim(Delimiter::RParen)];
+        let res = parse_atom(tokens);
+        assert_eq!(res.0.unwrap(),
+                   Atom::PExpr(Box::new(Expr::Atom(Atom::Const("2".into())))));
+    }
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]

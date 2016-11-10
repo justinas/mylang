@@ -1,4 +1,4 @@
-use super::{Keyword, Operator, Token, TokenAt};
+use super::{Delimiter, Keyword, Operator, Token, TokenAt};
 
 // expr == logexpr
 
@@ -114,6 +114,16 @@ pub fn parse_atom(tokens: &[Token]) -> (Option<Atom>, &[Token]) {
         return (None, tokens);
     }
 
+    if tokens[0] == Token::Delim(Delimiter::LParen) {
+        let (optexpr, remain) = parse_expr(&tokens[1..]);
+        match (optexpr, remain.get(0)) {
+            (Some(e), Some(&Token::Delim(Delimiter::RParen))) => {
+                return (Some(Atom::PExpr(Box::new(e))), &remain[1..]);
+            }
+            _ => return (None, tokens),
+        }
+    }
+
     if tokens[0] == Token::Op(Operator::Not) {
         if let (Some(a), remaining) = parse_atom(&tokens[1..]) {
             return (Some(Atom::Neg(Box::new(a))), remaining);
@@ -129,8 +139,6 @@ pub fn parse_atom(tokens: &[Token]) -> (Option<Atom>, &[Token]) {
     if let Token::Const(ref s) = tokens[0] {
         return (Some(Atom::Const(s.clone())), &tokens[1..]);
     }
-
-    // TODO: pexpr
 
     (None, tokens)
 }
