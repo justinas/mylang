@@ -23,7 +23,6 @@ pub struct DeclStmt {
     pub typ: Type,
 }
 
-
 #[derive(Debug, Eq, PartialEq)]
 pub struct FnArg {
     pub name: String,
@@ -35,6 +34,13 @@ pub struct FnItem {
     pub block: Block,
     pub name: String,
     pub params: Vec<FnArg>,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct IfStmt {
+    pub _if: Conditional,
+    pub _eifs: Vec<Conditional>,
+    pub _else: Option<Block>,
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -69,6 +75,42 @@ pub fn parse(tokens: &[Token]) -> Result<Vec<FnItem>, ()> {
     }
     Ok(funcs)
 }
+
+pub fn parse_ifstmt(tokens: &[Token]) -> (Option<IfStmt>, &[Token]) {
+    if tokens.get(0) != Some(&Token::Keyword(Keyword::If)) {
+        return (None, tokens);
+    }
+
+    let mut remaining = &tokens[1..];
+
+    let ifcond = match parse_expr(remaining) {
+        (Some(e), r) => {
+            remaining = r;
+            e
+        }
+        _ => return (None, tokens),
+    };
+
+    let ifblock = match parse_block(remaining) {
+        (Ok(b), r) => {
+            remaining = r;
+            b
+        }
+        _ => return (None, tokens),
+    };
+
+    let ifstmt = IfStmt {
+        _if: Conditional {
+            block: ifblock,
+            cond: ifcond,
+        },
+        _eifs: vec![],
+        _else: None,
+    };
+
+    (Some(ifstmt), remaining)
+}
+
 
 pub fn parse_whilestmt(tokens: &[Token]) -> (Option<WhileStmt>, &[Token]) {
     if tokens.get(0) != Some(&Token::Keyword(Keyword::While)) {
