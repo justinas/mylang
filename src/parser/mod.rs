@@ -9,6 +9,9 @@ pub struct AssignStmt {
 }
 
 #[derive(Debug, Eq, PartialEq)]
+pub struct Block(Vec<Stmt>);
+
+#[derive(Debug, Eq, PartialEq)]
 pub struct DeclStmt {
     pub ident: String,
     pub typ: Type,
@@ -23,7 +26,7 @@ pub struct FnArg {
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct FnItem {
-    pub block: Stmt,
+    pub block: Block,
     pub name: String,
     pub params: Vec<FnArg>,
 }
@@ -31,7 +34,7 @@ pub struct FnItem {
 #[derive(Debug, Eq, PartialEq)]
 pub enum Stmt {
     Assign(AssignStmt),
-    Block(Vec<Stmt>),
+    Block(Block),
     Decl(DeclStmt),
 }
 
@@ -102,7 +105,7 @@ pub fn parse_fn(tokens: &[Token]) -> (Option<FnItem>, &[Token]) {
      remaining)
 }
 
-pub fn parse_block(tokens: &[Token]) -> (Result<Stmt, ()>, &[Token]) {
+pub fn parse_block(tokens: &[Token]) -> (Result<Block, ()>, &[Token]) {
     if tokens.get(0) != Some(&Token::Delim(Delimiter::LCurly)) {
         return (Err(()), tokens);
     }
@@ -128,10 +131,11 @@ pub fn parse_block(tokens: &[Token]) -> (Result<Stmt, ()>, &[Token]) {
         return (Err(()), remaining);
     }
 
-    (Ok(Stmt::Block(block_stmts)), &remaining[1..])
+    (Ok(Block(block_stmts)), &remaining[1..])
 }
 
 pub fn parse_stmt(tokens: &[Token]) -> (Option<Stmt>, &[Token]) {
+    // TODO: if, while
     match parse_assignstmt(tokens) {
         (Some(s), remain) => return (Some(Stmt::Assign(s)), remain),
         _ => (),

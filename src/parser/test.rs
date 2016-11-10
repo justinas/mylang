@@ -27,11 +27,7 @@ fn test_parse() {
         let funcs = parse(&tokens).unwrap();
         assert_eq!(funcs.len(), 2);
         assert_eq!(funcs[0].name, "dothis");
-        if let Stmt::Block(ref v) = funcs[0].block {
-            assert_eq!(v.len(), 4);
-        } else {
-            unreachable!();
-        }
+        assert_eq!(funcs[0].block.0.len(), 4);
         assert_eq!(funcs[1].name, "dothat");
     }
 }
@@ -41,10 +37,7 @@ fn test_parse_fn() {
     {
         let tokens = str_to_tokens("fn dothis() { var a byte; a = 3 / 4 + 2;}");
         let func = parse_fn(&tokens).0.unwrap();
-        match func.block {
-            Stmt::Block(v) => assert_eq!(v.len(), 2),
-            _ => unreachable!(),
-        }
+        assert_eq!(func.block.0.len(), 2);
         assert_eq!(func.name, "dothis".to_string());
         assert_eq!(func.params, vec![]);
     }
@@ -55,7 +48,7 @@ fn test_parse_block() {
     {
         let tokens = &[Token::Delim(Delimiter::LCurly), Token::Delim(Delimiter::RCurly)];
         let res = parse_block(tokens);
-        assert_eq!(res.0.unwrap(), Stmt::Block(vec![]));
+        assert_eq!(res.0.unwrap(), Block(vec![]));
         assert_eq!(res.1, &[]);
     }
 
@@ -64,12 +57,8 @@ fn test_parse_block() {
         let tokens = str_to_tokens("{ var a byte; a = 3 / 4 + 2;}");
         let res = parse_block(&tokens);
         let block = res.0.unwrap();
-        let stmts = match block {
-            Stmt::Block(s) => s,
-            _ => panic!(),
-        };
-        assert_eq!(stmts.len(), 2);
-        assert_eq!(stmts[0],
+        assert_eq!(block.0.len(), 2);
+        assert_eq!(block.0[0],
                    Stmt::Decl(DeclStmt {
                        ident: "a".into(),
                        typ: Type::Byte,
