@@ -1,7 +1,4 @@
 fn main() {
-    if iff == 3 {
-        while a <= 4 {
-            displaystr("\"hello\"\n");
-        }
-    }
+    var a byte;
+    a = (2+2) / 4 <= 3;
 }

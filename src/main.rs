@@ -34,16 +34,16 @@ fn main() {
     };
 
     let tokens_at = match lexer.lex() {
-        Ok(t) => {
-            pretty_print(&t);
-            t
-        }
+        Ok(t) => t,
         Err((t, e)) => {
             pretty_print(&t);
             write!(stderr(), "{}", e);
             return;
         }
     };
+
+    let tokens: Vec<_> = tokens_at.into_iter().map(|t| t.0).collect();
+    println!("{:#?}", parser::parse(&tokens).unwrap())
 }
 
 mod lexer;
