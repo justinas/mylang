@@ -24,7 +24,7 @@ pub struct DeclStmt {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct FnArg {
+pub struct FnParam {
     pub name: String,
     pub typ: Type,
 }
@@ -33,7 +33,7 @@ pub struct FnArg {
 pub struct FnItem {
     pub block: Block,
     pub name: String,
-    pub params: Vec<FnArg>,
+    pub params: Vec<FnParam>,
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -100,7 +100,31 @@ pub fn parse_fn(tokens: &[Token]) -> (Option<FnItem>, &[Token]) {
     }
     remaining = &remaining[1..];
 
-    // TODO: parse parameters
+    let mut params = vec![];
+    loop {
+        let name = if let Some(&Token::Ident(ref s)) = remaining.get(0) {
+            s.clone()
+        } else {
+            break;
+        };
+        remaining = &remaining[1..];
+
+        let typ = match remaining.get(0) {
+            Some(&Token::Keyword(Keyword::Byte)) => Type::Byte,
+            Some(&Token::Keyword(Keyword::Int)) => Type::Int,
+            Some(&Token::Keyword(Keyword::Void)) => Type::Void,
+            _ => break,
+        };
+        remaining = &remaining[1..];
+
+        if let Some(&Token::Delim(Delimiter::Comma)) = remaining.get(0) {
+            remaining = &remaining[1..];
+        }
+        params.push(FnParam {
+            name: name,
+            typ: typ,
+        });
+    }
 
     if remaining.get(0) != Some(&Token::Delim(Delimiter::RParen)) {
         return (None, tokens);
@@ -118,7 +142,7 @@ pub fn parse_fn(tokens: &[Token]) -> (Option<FnItem>, &[Token]) {
     (Some(FnItem {
         block: block,
         name: fn_name,
-        params: vec![],
+        params: params,
     }),
      remaining)
 }

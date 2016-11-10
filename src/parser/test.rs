@@ -19,7 +19,7 @@ fn test_parse() {
             b = a + 1;
         }
 
-        fn dothat() {
+        fn dothat(d int, e byte) {
             c = 15 * 6;
             if c <= 5 {
                 c = c * 2;
@@ -33,6 +33,15 @@ fn test_parse() {
         assert_eq!(funcs[0].block.0.len(), 4);
         assert_eq!(funcs[1].name, "dothat");
         assert_eq!(funcs[1].block.0.len(), 2);
+        assert_eq!(funcs[1].params,
+                   vec![FnParam {
+                            name: "d".into(),
+                            typ: Type::Int,
+                        },
+                        FnParam {
+                            name: "e".into(),
+                            typ: Type::Byte,
+                        }]);
     }
 }
 
