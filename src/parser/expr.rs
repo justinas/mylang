@@ -5,7 +5,7 @@ use super::{Delimiter, Keyword, Operator, Token, TokenAt};
 #[derive(Debug, Eq, PartialEq)]
 pub enum Atom {
     Const(String),
-    FnCall,
+    FnCall(String, Vec<Expr>),
     Ident(String),
     Neg(Box<Atom>),
     PExpr(Box<Expr>),
@@ -163,10 +163,38 @@ pub fn parse_atom(tokens: &[Token]) -> (Option<Atom>, &[Token]) {
         }
     }
 
-    // TODO: fncall
-
     if let Token::Ident(ref s) = tokens[0] {
-        return (Some(Atom::Ident(s.clone())), &tokens[1..]);
+        match tokens.get(1) {
+            // fncall, continue
+            Some(&Token::Delim(Delimiter::LParen)) => (),
+            // just an ident, return
+            _ => return (Some(Atom::Ident(s.clone())), &tokens[1..]),
+        }
+
+        let fn_name = s.clone();
+        let mut fn_args = vec![];
+        // already verified the opening paren, skip it safely
+        let mut remaining = &tokens[2..];
+
+        loop {
+            match parse_expr(remaining) {
+                (Some(e), r) => {
+                    fn_args.push(e);
+                    remaining = r
+                }
+                _ => break,
+            }
+            match remaining.get(0) {
+                Some(&Token::Delim(Delimiter::Comma)) => remaining = &remaining[1..],
+                _ => break,
+            }
+        }
+        return match remaining.get(0) {
+            Some(&Token::Delim(Delimiter::RParen)) => {
+                (Some(Atom::FnCall(fn_name, fn_args)), &remaining[1..])
+            }
+            _ => (None, tokens),
+        };
     }
 
     if let Token::Const(ref s) = tokens[0] {

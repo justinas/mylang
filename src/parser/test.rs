@@ -255,6 +255,43 @@ fn test_parse_atom() {
         assert_eq!(res.0.unwrap(),
                    Atom::PExpr(Box::new(Expr::Atom(Atom::Const("2".into())))));
     }
+
+    // fncall, 0 args
+    {
+        let tokens = &[Token::Ident("dothis".into()),
+                       Token::Delim(Delimiter::LParen),
+                       Token::Delim(Delimiter::RParen)];
+        let res = parse_atom(tokens);
+        assert_eq!(res.0.unwrap(), Atom::FnCall("dothis".into(), vec![]));
+    }
+
+    // fncall, 1 arg
+    {
+        let tokens = &[Token::Ident("dothis".into()),
+                       Token::Delim(Delimiter::LParen),
+                       Token::Const("2".into()),
+                       Token::Delim(Delimiter::RParen)];
+        let res = parse_atom(tokens);
+        let expected = Atom::FnCall("dothis".into(), vec![Expr::Atom(Atom::Const("2".into()))]);
+        assert_eq!(res.0.unwrap(), expected);
+    }
+
+    // fncall, 2 args
+    {
+        let tokens = &[Token::Ident("dothis".into()),
+                       Token::Delim(Delimiter::LParen),
+                       Token::Const("2".into()),
+                       Token::Delim(Delimiter::Comma),
+                       Token::Ident("ab".into()),
+                       Token::Delim(Delimiter::RParen)];
+        let res = parse_atom(tokens);
+        let expected = Atom::FnCall("dothis".into(),
+                                    vec![
+                                    Expr::Atom(Atom::Const("2".into())),
+                                    Expr::Atom(Atom::Ident("ab".into())),
+                                    ]);
+        assert_eq!(res.0.unwrap(), expected);
+    }
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
