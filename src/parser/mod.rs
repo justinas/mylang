@@ -12,6 +12,12 @@ pub struct AssignStmt {
 pub struct Block(Vec<Stmt>);
 
 #[derive(Debug, Eq, PartialEq)]
+pub struct Conditional {
+    pub block: Block,
+    pub cond: Expr,
+}
+
+#[derive(Debug, Eq, PartialEq)]
 pub struct DeclStmt {
     pub ident: String,
     pub typ: Type,
@@ -36,6 +42,7 @@ pub enum Stmt {
     Assign(AssignStmt),
     Block(Block),
     Decl(DeclStmt),
+    While(WhileStmt),
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -44,6 +51,9 @@ pub enum Type {
     Int,
     Void,
 }
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct WhileStmt(pub Conditional);
 
 pub fn parse(tokens: &[Token]) -> Result<Vec<FnItem>, ()> {
     let mut tokens = tokens;
@@ -58,6 +68,36 @@ pub fn parse(tokens: &[Token]) -> Result<Vec<FnItem>, ()> {
         }
     }
     Ok(funcs)
+}
+
+pub fn parse_whilestmt(tokens: &[Token]) -> (Option<WhileStmt>, &[Token]) {
+    if tokens.get(0) != Some(&Token::Keyword(Keyword::While)) {
+        return (None, tokens);
+    }
+
+    let mut remaining = &tokens[1..];
+
+    let cond = match parse_expr(remaining) {
+        (Some(e), r) => {
+            remaining = r;
+            e
+        }
+        _ => return (None, tokens),
+    };
+
+    let block = match parse_block(remaining) {
+        (Ok(b), r) => {
+            remaining = r;
+            b
+        }
+        _ => return (None, tokens),
+    };
+
+    (Some(WhileStmt(Conditional {
+        block: block,
+        cond: cond,
+    })),
+     remaining)
 }
 
 pub fn parse_fn(tokens: &[Token]) -> (Option<FnItem>, &[Token]) {
@@ -135,7 +175,11 @@ pub fn parse_block(tokens: &[Token]) -> (Result<Block, ()>, &[Token]) {
 }
 
 pub fn parse_stmt(tokens: &[Token]) -> (Option<Stmt>, &[Token]) {
-    // TODO: if, while
+    // TODO: if
+    match parse_whilestmt(tokens) {
+        (Some(s), remain) => return (Some(Stmt::While(s)), remain),
+        _ => (),
+    }
     match parse_assignstmt(tokens) {
         (Some(s), remain) => return (Some(Stmt::Assign(s)), remain),
         _ => (),

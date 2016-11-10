@@ -33,6 +33,21 @@ fn test_parse() {
 }
 
 #[test]
+fn test_parse_whilestmt() {
+    {
+        let body = r#"while 1 {} "#;
+        let tokens = str_to_tokens(body);
+        let stmt = parse_whilestmt(&tokens).0.unwrap();
+        assert_eq!(stmt,
+                   WhileStmt(Conditional {
+                       block: Block(vec![]),
+                       cond: Expr::Atom(Atom::Const("1".into())),
+                   }));
+    }
+}
+
+
+#[test]
 fn test_parse_fn() {
     {
         let tokens = str_to_tokens("fn dothis() { var a byte; a = 3 / 4 + 2;}");
