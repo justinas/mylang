@@ -48,6 +48,8 @@ pub enum Stmt {
     Assign(AssignStmt),
     Block(Block),
     Decl(DeclStmt),
+    Expr(Expr),
+    If(IfStmt),
     While(WhileStmt),
 }
 
@@ -83,7 +85,7 @@ pub fn parse_ifstmt(tokens: &[Token]) -> (Option<IfStmt>, &[Token]) {
 
     let mut remaining = &tokens[1..];
 
-    let ifcond = match parse_expr(remaining) {
+    let cond = match parse_expr(remaining) {
         (Some(e), r) => {
             remaining = r;
             e
@@ -91,7 +93,7 @@ pub fn parse_ifstmt(tokens: &[Token]) -> (Option<IfStmt>, &[Token]) {
         _ => return (None, tokens),
     };
 
-    let ifblock = match parse_block(remaining) {
+    let block = match parse_block(remaining) {
         (Ok(b), r) => {
             remaining = r;
             b
@@ -101,14 +103,38 @@ pub fn parse_ifstmt(tokens: &[Token]) -> (Option<IfStmt>, &[Token]) {
 
     let mut ifstmt = IfStmt {
         _if: Conditional {
-            block: ifblock,
-            cond: ifcond,
+            block: block,
+            cond: cond,
         },
         _eifs: vec![],
         _else: None,
     };
 
-    // TODO: eifs
+    while let (Some(&Token::Keyword(Keyword::Else)), Some(&Token::Keyword(Keyword::If))) =
+              (remaining.get(0), remaining.get(1)) {
+        let mut my_remaining = &remaining[2..];
+
+        let cond = match parse_expr(my_remaining) {
+            (Some(e), r) => {
+                my_remaining = r;
+                e
+            }
+            _ => return (None, tokens),
+        };
+
+        let block = match parse_block(my_remaining) {
+            (Ok(b), r) => {
+                my_remaining = r;
+                b
+            }
+            _ => return (None, tokens),
+        };
+        ifstmt._eifs.push(Conditional {
+            block: block,
+            cond: cond,
+        });
+        remaining = my_remaining
+    }
 
     if let Some(&Token::Keyword(Keyword::Else)) = remaining.get(0) {
         let mut my_remaining = &remaining[1..];
@@ -232,11 +258,16 @@ pub fn parse_block(tokens: &[Token]) -> (Result<Block, ()>, &[Token]) {
 }
 
 pub fn parse_stmt(tokens: &[Token]) -> (Option<Stmt>, &[Token]) {
-    // TODO: if
+    match parse_ifstmt(tokens) {
+        (Some(s), remain) => return (Some(Stmt::If(s)), remain),
+        _ => (),
+    }
+
     match parse_whilestmt(tokens) {
         (Some(s), remain) => return (Some(Stmt::While(s)), remain),
         _ => (),
     }
+
     match parse_assignstmt(tokens) {
         (Some(s), remain) => return (Some(Stmt::Assign(s)), remain),
         _ => (),
@@ -244,6 +275,11 @@ pub fn parse_stmt(tokens: &[Token]) -> (Option<Stmt>, &[Token]) {
 
     match parse_declstmt(tokens) {
         (Some(s), remain) => return (Some(Stmt::Decl(s)), remain),
+        _ => (),
+    }
+
+    match parse_expr(tokens) {
+        (Some(e), remain) => return (Some(Stmt::Expr(e)), remain),
         _ => (),
     }
 

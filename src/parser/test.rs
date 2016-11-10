@@ -63,6 +63,24 @@ fn test_parse_ifstmt() {
         };
         assert_eq!(stmt, expected);
     }
+
+    {
+        let body = r#"if 1 {} else if 2 {} else {}"#;
+        let tokens = str_to_tokens(body);
+        let stmt = parse_ifstmt(&tokens).0.unwrap();
+        let expected = IfStmt {
+            _if: Conditional {
+                block: Block(vec![]),
+                cond: Expr::Atom(Atom::Const("1".into())),
+            },
+            _eifs: vec![Conditional {
+                            block: Block(vec![]),
+                            cond: Expr::Atom(Atom::Const("2".into())),
+                        }],
+            _else: Some(Block(vec![])),
+        };
+        assert_eq!(stmt, expected);
+    }
 }
 
 #[test]
