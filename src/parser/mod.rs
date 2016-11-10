@@ -78,6 +78,110 @@ pub fn parse(tokens: &[Token]) -> Result<Vec<FnItem>, ()> {
     Ok(funcs)
 }
 
+pub fn parse_fn(tokens: &[Token]) -> (Option<FnItem>, &[Token]) {
+    let mut remaining = tokens;
+    let fn_name;
+    let block;
+
+    if remaining.get(0) != Some(&Token::Keyword(Keyword::Fn)) {
+        return (None, tokens);
+    }
+    remaining = &remaining[1..];
+
+    if let Some(&Token::Ident(ref s)) = remaining.get(0) {
+        fn_name = s.clone();
+    } else {
+        return (None, tokens);
+    }
+    remaining = &remaining[1..];
+
+    if remaining.get(0) != Some(&Token::Delim(Delimiter::LParen)) {
+        return (None, tokens);
+    }
+    remaining = &remaining[1..];
+
+    // TODO: parse parameters
+
+    if remaining.get(0) != Some(&Token::Delim(Delimiter::RParen)) {
+        return (None, tokens);
+    }
+    remaining = &remaining[1..];
+
+    match parse_block(remaining) {
+        (Ok(s), remain) => {
+            block = s;
+            remaining = remain;
+        }
+        _ => return (None, tokens),
+    }
+
+    (Some(FnItem {
+        block: block,
+        name: fn_name,
+        params: vec![],
+    }),
+     remaining)
+}
+
+
+pub fn parse_block(tokens: &[Token]) -> (Result<Block, ()>, &[Token]) {
+    if tokens.get(0) != Some(&Token::Delim(Delimiter::LCurly)) {
+        return (Err(()), tokens);
+    }
+
+    let mut block_stmts = Vec::new();
+    let mut remaining = &tokens[1..];
+
+    loop {
+        match parse_stmt(remaining) {
+            (Some(s), r) => {
+                block_stmts.push(s);
+                remaining = r;
+            }
+            _ => break,
+        }
+        if remaining.get(0) != Some(&Token::Delim(Delimiter::Semicolon)) {
+            return (Err(()), remaining);
+        }
+        remaining = &remaining[1..];
+    }
+
+    if remaining.get(0) != Some(&Token::Delim(Delimiter::RCurly)) {
+        return (Err(()), remaining);
+    }
+
+    (Ok(Block(block_stmts)), &remaining[1..])
+}
+
+pub fn parse_stmt(tokens: &[Token]) -> (Option<Stmt>, &[Token]) {
+    match parse_ifstmt(tokens) {
+        (Some(s), remain) => return (Some(Stmt::If(s)), remain),
+        _ => (),
+    }
+
+    match parse_whilestmt(tokens) {
+        (Some(s), remain) => return (Some(Stmt::While(s)), remain),
+        _ => (),
+    }
+
+    match parse_assignstmt(tokens) {
+        (Some(s), remain) => return (Some(Stmt::Assign(s)), remain),
+        _ => (),
+    }
+
+    match parse_declstmt(tokens) {
+        (Some(s), remain) => return (Some(Stmt::Decl(s)), remain),
+        _ => (),
+    }
+
+    match parse_expr(tokens) {
+        (Some(e), remain) => return (Some(Stmt::Expr(e)), remain),
+        _ => (),
+    }
+
+    (None, tokens)
+}
+
 pub fn parse_ifstmt(tokens: &[Token]) -> (Option<IfStmt>, &[Token]) {
     if tokens.get(0) != Some(&Token::Keyword(Keyword::If)) {
         return (None, tokens);
@@ -181,109 +285,6 @@ pub fn parse_whilestmt(tokens: &[Token]) -> (Option<WhileStmt>, &[Token]) {
         cond: cond,
     })),
      remaining)
-}
-
-pub fn parse_fn(tokens: &[Token]) -> (Option<FnItem>, &[Token]) {
-    let mut remaining = tokens;
-    let fn_name;
-    let block;
-
-    if remaining.get(0) != Some(&Token::Keyword(Keyword::Fn)) {
-        return (None, tokens);
-    }
-    remaining = &remaining[1..];
-
-    if let Some(&Token::Ident(ref s)) = remaining.get(0) {
-        fn_name = s.clone();
-    } else {
-        return (None, tokens);
-    }
-    remaining = &remaining[1..];
-
-    if remaining.get(0) != Some(&Token::Delim(Delimiter::LParen)) {
-        return (None, tokens);
-    }
-    remaining = &remaining[1..];
-
-    // TODO: parse parameters
-
-    if remaining.get(0) != Some(&Token::Delim(Delimiter::RParen)) {
-        return (None, tokens);
-    }
-    remaining = &remaining[1..];
-
-    match parse_block(remaining) {
-        (Ok(s), remain) => {
-            block = s;
-            remaining = remain;
-        }
-        _ => return (None, tokens),
-    }
-
-    (Some(FnItem {
-        block: block,
-        name: fn_name,
-        params: vec![],
-    }),
-     remaining)
-}
-
-pub fn parse_block(tokens: &[Token]) -> (Result<Block, ()>, &[Token]) {
-    if tokens.get(0) != Some(&Token::Delim(Delimiter::LCurly)) {
-        return (Err(()), tokens);
-    }
-
-    let mut block_stmts = Vec::new();
-    let mut remaining = &tokens[1..];
-
-    loop {
-        match parse_stmt(remaining) {
-            (Some(s), r) => {
-                block_stmts.push(s);
-                remaining = r;
-            }
-            _ => break,
-        }
-        if remaining.get(0) != Some(&Token::Delim(Delimiter::Semicolon)) {
-            return (Err(()), remaining);
-        }
-        remaining = &remaining[1..];
-    }
-
-    if remaining.get(0) != Some(&Token::Delim(Delimiter::RCurly)) {
-        return (Err(()), remaining);
-    }
-
-    (Ok(Block(block_stmts)), &remaining[1..])
-}
-
-pub fn parse_stmt(tokens: &[Token]) -> (Option<Stmt>, &[Token]) {
-    match parse_ifstmt(tokens) {
-        (Some(s), remain) => return (Some(Stmt::If(s)), remain),
-        _ => (),
-    }
-
-    match parse_whilestmt(tokens) {
-        (Some(s), remain) => return (Some(Stmt::While(s)), remain),
-        _ => (),
-    }
-
-    match parse_assignstmt(tokens) {
-        (Some(s), remain) => return (Some(Stmt::Assign(s)), remain),
-        _ => (),
-    }
-
-    match parse_declstmt(tokens) {
-        (Some(s), remain) => return (Some(Stmt::Decl(s)), remain),
-        _ => (),
-    }
-
-    match parse_expr(tokens) {
-        (Some(e), remain) => return (Some(Stmt::Expr(e)), remain),
-        _ => (),
-    }
-
-    (None, tokens)
 }
 
 pub fn parse_assignstmt(tokens: &[Token]) -> (Option<AssignStmt>, &[Token]) {
