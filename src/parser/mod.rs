@@ -99,7 +99,7 @@ pub fn parse_ifstmt(tokens: &[Token]) -> (Option<IfStmt>, &[Token]) {
         _ => return (None, tokens),
     };
 
-    let ifstmt = IfStmt {
+    let mut ifstmt = IfStmt {
         _if: Conditional {
             block: ifblock,
             cond: ifcond,
@@ -107,6 +107,21 @@ pub fn parse_ifstmt(tokens: &[Token]) -> (Option<IfStmt>, &[Token]) {
         _eifs: vec![],
         _else: None,
     };
+
+    // TODO: eifs
+
+    if let Some(&Token::Keyword(Keyword::Else)) = remaining.get(0) {
+        let mut my_remaining = &remaining[1..];
+        let block = match parse_block(my_remaining) {
+            (Ok(b), r) => {
+                my_remaining = r;
+                b
+            }
+            _ => return (Some(ifstmt), remaining),
+        };
+        ifstmt._else = Some(block);
+        remaining = my_remaining;
+    }
 
     (Some(ifstmt), remaining)
 }
