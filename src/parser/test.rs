@@ -304,3 +304,17 @@ fn test_parse_sum() {
         assert!(res.1.is_empty());
     }
 }
+
+#[test]
+fn test_parse_comparison() {
+    {
+        let tokens =
+            &[Token::Const("123".into()), Token::Op(Operator::Gte), Token::Ident("b".into())];
+        let res = parse_comparison(tokens);
+        assert_eq!(res.0.unwrap(),
+                   Expr::Bin(Box::new(Expr::Atom(Atom::Const("123".into()))),
+                             Box::new(Expr::Atom(Atom::Ident("b".into()))),
+                             Operation::Gte));
+    }
+
+}

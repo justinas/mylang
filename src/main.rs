@@ -33,15 +33,17 @@ fn main() {
         }
     };
 
-    match lexer.lex() {
-        Ok(tokens) => {
-            pretty_print(&tokens);
+    let tokens_at = match lexer.lex() {
+        Ok(t) => {
+            pretty_print(&t);
+            t
         }
-        Err((tokens, e)) => {
-            pretty_print(&tokens);
+        Err((t, e)) => {
+            pretty_print(&t);
             write!(stderr(), "{}", e);
+            return;
         }
-    }
+    };
 }
 
 mod lexer;
