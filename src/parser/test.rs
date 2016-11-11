@@ -17,6 +17,7 @@ fn test_parse() {
             var b byte;
             a = 3 / 4 + 2;
             b = a + 1;
+            return a;
         }
 
         fn dothat(d int, e byte) {
@@ -30,7 +31,7 @@ fn test_parse() {
         let funcs = parse(&tokens).unwrap();
         assert_eq!(funcs.len(), 2);
         assert_eq!(funcs[0].name, "dothis");
-        assert_eq!(funcs[0].block.0.len(), 4);
+        assert_eq!(funcs[0].block.0.len(), 5);
         assert_eq!(funcs[1].name, "dothat");
         assert_eq!(funcs[1].block.0.len(), 2);
         assert_eq!(funcs[1].params,
@@ -157,6 +158,15 @@ fn test_parse_block() {
 
 #[test]
 fn test_parse_stmt() {
+    {
+        let tokens = &[Token::Keyword(Keyword::Return), Token::Ident("abc".into())];
+
+        let res = parse_stmt(tokens);
+        let stmt = res.0.unwrap();
+        let expected = Stmt::Return(Expr::Atom(Atom::Ident("abc".into())));
+        assert_eq!(stmt, expected);
+    }
+
     {
         let tokens = &[Token::Ident("abc".into()),
                        Token::Op(Operator::Assign),

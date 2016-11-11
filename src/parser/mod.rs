@@ -65,6 +65,7 @@ pub enum Stmt {
     Decl(DeclStmt),
     Expr(Expr),
     If(IfStmt),
+    Return(Expr),
     While(WhileStmt),
 }
 
@@ -219,6 +220,10 @@ pub fn parse_block(tokens: &[Token]) -> (Result<Block, ()>, &[Token]) {
 }
 
 pub fn parse_stmt(tokens: &[Token]) -> (Option<Stmt>, &[Token]) {
+    match parse_returnstmt(tokens) {
+        (Some(s), remain) => return (Some(Stmt::Return(s)), remain),
+        _ => (),
+    }
     match parse_ifstmt(tokens) {
         (Some(s), remain) => return (Some(Stmt::If(s)), remain),
         _ => (),
@@ -245,6 +250,15 @@ pub fn parse_stmt(tokens: &[Token]) -> (Option<Stmt>, &[Token]) {
     }
 
     (None, tokens)
+}
+
+pub fn parse_returnstmt(tokens: &[Token]) -> (Option<Expr>, &[Token]) {
+    match tokens.get(0) {
+        Some(&Token::Keyword(Keyword::Return)) => (),
+        _ => return (None, tokens),
+    }
+
+    parse_expr(&tokens[1..])
 }
 
 pub fn parse_ifstmt(tokens: &[Token]) -> (Option<IfStmt>, &[Token]) {

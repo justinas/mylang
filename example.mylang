@@ -1,5 +1,6 @@
-fn dothis(x int, y byte) {
+fn dothis(x int, y byte) int {
     a = 1/3;
+    return a;
 }
 
 fn main() {
