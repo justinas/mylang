@@ -36,6 +36,7 @@ pub struct FnItem {
     pub block: Block,
     pub name: String,
     pub params: Vec<FnParam>,
+    pub ret: Type,
 }
 
 impl fmt::Display for FnItem {
@@ -145,6 +146,19 @@ pub fn parse_fn(tokens: &[Token]) -> (Option<FnItem>, &[Token]) {
     }
     remaining = &remaining[1..];
 
+    let mut typ = Type::Void;
+    match remaining.get(0) {
+        Some(&Token::Keyword(Keyword::Byte)) => {
+            remaining = &remaining[1..];
+            typ = Type::Byte;
+        }
+        Some(&Token::Keyword(Keyword::Int)) => {
+            remaining = &remaining[1..];
+            typ = Type::Int;
+        }
+        _ => (),
+    }
+
     match parse_block(remaining) {
         (Ok(s), remain) => {
             block = s;
@@ -157,6 +171,7 @@ pub fn parse_fn(tokens: &[Token]) -> (Option<FnItem>, &[Token]) {
         block: block,
         name: fn_name,
         params: params,
+        ret: typ,
     }),
      remaining)
 }

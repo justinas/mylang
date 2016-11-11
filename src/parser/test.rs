@@ -119,6 +119,16 @@ fn test_parse_fn() {
         assert_eq!(func.block.0.len(), 2);
         assert_eq!(func.name, "dothis".to_string());
         assert_eq!(func.params, vec![]);
+        assert_eq!(func.ret, Type::Void);
+    }
+
+    {
+        let tokens = str_to_tokens("fn dothis() int { var a byte; a = 3 / 4 + 2;}");
+        let func = parse_fn(&tokens).0.unwrap();
+        assert_eq!(func.block.0.len(), 2);
+        assert_eq!(func.name, "dothis".to_string());
+        assert_eq!(func.params, vec![]);
+        assert_eq!(func.ret, Type::Int);
     }
 }
 
