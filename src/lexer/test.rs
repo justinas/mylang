@@ -32,7 +32,7 @@ fn test_lex_const() {
 
 #[test]
 fn test_lex_op() {
-    let tokens = trylex("-+*/>>=<=<!=! ===");
+    let tokens = trylex("-+*/>>=<=<!=! === &&||");
     assert_eq!(tokens,
                vec![
                Token::Op(Operator::Minus),
@@ -47,6 +47,8 @@ fn test_lex_op() {
                Token::Op(Operator::Not),
                Token::Op(Operator::Eq),
                Token::Op(Operator::Assign),
+               Token::Op(Operator::And),
+               Token::Op(Operator::Or),
                ])
 }
 

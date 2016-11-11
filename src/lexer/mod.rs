@@ -266,6 +266,30 @@ impl Lexer {
                     }
                 }
 
+                '&' => {
+                    self.chars.next();
+                    match self.chars.peek() {
+                        Some(&'&') => {
+                            self.chars.next();
+                            Ok(Token::Op(Operator::And))
+                        }
+                        Some(&c) => Err(ErrorVariant::Expected('&')),
+                        None => Err(ErrorVariant::EOF),
+                    }
+                }
+
+                '|' => {
+                    self.chars.next();
+                    match self.chars.peek() {
+                        Some(&'|') => {
+                            self.chars.next();
+                            Ok(Token::Op(Operator::Or))
+                        }
+                        Some(&c) => Err(ErrorVariant::Expected('|')),
+                        None => Err(ErrorVariant::EOF),
+                    }
+                }
+
                 '+' | '*' => Ok(Token::Op(Operator::from_char(self.chars.next().unwrap()))),
                 ',' | ';' | '(' | ')' | '{' | '}' | '[' | ']' => {
                     Ok(Token::Delim(Delimiter::from_char(self.chars.next().unwrap())))

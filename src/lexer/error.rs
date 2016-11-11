@@ -3,14 +3,20 @@ use std::fmt;
 #[derive(Debug, Eq, PartialEq)]
 pub enum ErrorVariant {
     EOF,
+    Expected(char),
     UnknownCharacter,
     InvalidStringEscape,
 }
 
 impl fmt::Display for ErrorVariant {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s;
         let desc = match *self {
             ErrorVariant::EOF => "unexpected end of file",
+            ErrorVariant::Expected(c) => {
+                s = format!("expected char {:?}", c);
+                &s
+            }
             ErrorVariant::UnknownCharacter => "unknown character occured",
             ErrorVariant::InvalidStringEscape => "invalid escape character in string",
         };
