@@ -61,6 +61,7 @@ pub struct IfStmt {
 #[derive(Debug, Eq, PartialEq)]
 pub enum Stmt {
     Assign(AssignStmt),
+    Break,
     Block(Block),
     Decl(DeclStmt),
     Expr(Expr),
@@ -220,6 +221,10 @@ pub fn parse_block(tokens: &[Token]) -> (Result<Block, ()>, &[Token]) {
 }
 
 pub fn parse_stmt(tokens: &[Token]) -> (Option<Stmt>, &[Token]) {
+    if let Some(&Token::Keyword(Keyword::Break)) = tokens.get(0) {
+        return (Some(Stmt::Break), &tokens[1..]);
+    }
+
     match parse_returnstmt(tokens) {
         (Some(s), remain) => return (Some(Stmt::Return(s)), remain),
         _ => (),

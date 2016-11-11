@@ -47,6 +47,17 @@ fn test_parse() {
 }
 
 #[test]
+fn test_parse_break() {
+    {
+        let body = r#"break;"#;
+        let tokens = str_to_tokens(body);
+        let stmt = parse_stmt(&tokens).0.unwrap();
+        assert_eq!(stmt, Stmt::Break);
+    }
+}
+
+
+#[test]
 fn test_parse_ifstmt() {
     {
         let body = r#"if 1 {} "#;
