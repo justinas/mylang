@@ -1,3 +1,5 @@
+use std::fmt;
+
 pub use super::lexer::{Delimiter, Keyword, Operator, Token, TokenAt};
 use self::expr::Expr;
 use self::expr::parse_expr;
@@ -34,6 +36,18 @@ pub struct FnItem {
     pub block: Block,
     pub name: String,
     pub params: Vec<FnParam>,
+}
+
+impl fmt::Display for FnItem {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(f, r#"Function {:?} ( "#, self.name));
+        for param in &self.params {
+            try!(write!(f, r"{:?} {:?} ", param.typ, param.name));
+        }
+        write!(f, ")\n");
+        write!(f, "{:#?}\n", self.block);
+        Ok(())
+    }
 }
 
 #[derive(Debug, Eq, PartialEq)]

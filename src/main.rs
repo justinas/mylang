@@ -43,7 +43,17 @@ fn main() {
     };
 
     let tokens: Vec<_> = tokens_at.into_iter().map(|t| t.0).collect();
-    println!("{:#?}", parser::parse(&tokens).unwrap())
+    let funcs = match parser::parse(&tokens) {
+        Ok(f) => f,
+        Err(_) => {
+            write!(stderr(), "Syntax error.");
+            return;
+        }
+    };
+
+    for f in &funcs {
+        println!("{}", f);
+    }
 }
 
 mod lexer;
