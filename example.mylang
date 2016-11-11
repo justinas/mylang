@@ -8,5 +8,6 @@ fn main() {
     a = (2+2) / 4 <= 3;
     while dothis(1, 2, a+1) <= 3 {
         a = a -  1;
+        break;
     }
 }
