@@ -411,6 +411,31 @@ fn test_parse_sum() {
 }
 
 #[test]
+fn test_parse_logexpr() {
+    {
+        let tokens = &[Token::Const("123".into()),
+                       Token::Op(Operator::Lte),
+                       Token::Ident("b".into()),
+
+                       Token::Op(Operator::And),
+
+                       Token::Const("456".into()),
+                       Token::Op(Operator::Gte),
+                       Token::Ident("b".into())];
+        let res = parse_logexpr(tokens);
+        assert_eq!(res.0.unwrap(),
+                   Expr::Bin(Box::new(Expr::Bin(Box::new(Expr::Atom(Atom::Const("123".into()))),
+                                                Box::new(Expr::Atom(Atom::Ident("b".into()))),
+                                                Operation::Lte)),
+                             Box::new(Expr::Bin(Box::new(Expr::Atom(Atom::Const("456".into()))),
+                                                Box::new(Expr::Atom(Atom::Ident("b".into()))),
+                                                Operation::Gte)),
+                             Operation::And));
+    }
+
+}
+
+#[test]
 fn test_parse_comparison() {
     {
         let tokens =

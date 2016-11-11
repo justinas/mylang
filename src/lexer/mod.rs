@@ -77,6 +77,9 @@ pub enum Operator {
     Neq,
     Not,
 
+    And,
+    Or,
+
     Assign,
 }
 

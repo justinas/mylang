@@ -31,12 +31,45 @@ pub enum Operation {
     Gte,
     Eq,
     Neq,
+
+    And,
+    Or,
 }
 
+
 pub fn parse_expr(tokens: &[Token]) -> (Option<Expr>, &[Token]) {
+    parse_logexpr(tokens)
+}
+
+pub fn parse_logexpr(tokens: &[Token]) -> (Option<Expr>, &[Token]) {
     // TODO: logexpr && comparison, logexpr || comparison
 
-    parse_comparison(tokens)
+    let (mut expr, mut remain) = match parse_comparison(tokens) {
+        (Some(e), r) => (e, r),
+        _ => return (None, tokens),
+    };
+
+    loop {
+        let operator = match remain.get(0) {
+            Some(&Token::Op(ref o)) => o.clone(),
+            _ => break,
+        };
+        let operation = match *operator {
+            Operator::And => Operation::And,
+            Operator::Or => Operation::Or,
+            _ => break,
+        };
+        remain = &remain[1..];
+
+        match parse_comparison(remain) {
+            (Some(sum), r) => {
+                expr = Expr::Bin(Box::new(expr), Box::new(sum), operation);
+                remain = r;
+            }
+            _ => return (None, tokens),
+        }
+    }
+    (Some(expr), remain)
 }
 
 pub fn parse_comparison(tokens: &[Token]) -> (Option<Expr>, &[Token]) {
