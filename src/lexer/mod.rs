@@ -34,6 +34,7 @@ impl Delimiter {
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Keyword {
+    Break,
     Byte,
     Else,
     Fn,
@@ -48,6 +49,7 @@ pub enum Keyword {
 impl Keyword {
     fn from_ident(ident: &str) -> Option<Keyword> {
         match ident {
+            "break" => Some(Keyword::Break),
             "byte" => Some(Keyword::Byte),
             "else" => Some(Keyword::Else),
             "fn" => Some(Keyword::Fn),

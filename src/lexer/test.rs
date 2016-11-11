@@ -16,6 +16,14 @@ fn test_lex_ident() {
 }
 
 #[test]
+fn test_lex_keyword() {
+    let tokens = trylex("break");
+    assert_eq!(tokens.len(), 1);
+    assert_eq!(tokens[0], Token::Keyword(Keyword::Break));
+}
+
+
+#[test]
 fn test_lex_str() {
     let tokens = trylex("aaa \"bbb\\nccc d\\\"dd\"");
     assert_eq!(tokens.len(), 2);
