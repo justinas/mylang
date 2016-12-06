@@ -6,6 +6,7 @@ pub use self::gen::{Gen, Typed};
 
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct Context {
+    arguments: Vec<Symbol>,
     symbol_stack: Vec<Vec<Symbol>>,
 }
 
@@ -14,8 +15,18 @@ impl Context {
         Default::default()
     }
 
-    pub fn find_symbol(&self, name: &str) -> Option<&Symbol> {
-        self.symbol_stack.iter().rev().flat_map(|frame| frame.iter()).find(|s| s.name == name)
+    // Finds the symbol offset on stack.
+    pub fn find_symbol(&self, name: &str) -> Option<isize> {
+        if let Some(p) = self.arguments.iter().rev().position(|s| s.name == name) {
+            return Some((p + 1) as isize);
+        }
+        let full_len = self.symbol_stack.iter().flat_map(|frame| frame.iter()).count() as isize;
+        self.symbol_stack
+            .iter()
+            .rev()
+            .flat_map(|frame| frame.iter().rev())
+            .position(|s| s.name == name)
+            .map(|p| -full_len + p as isize)
     }
 
     // Pop the top frame of the stack.

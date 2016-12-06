@@ -66,16 +66,24 @@ fn test_symbol_stack() {
         let mut ctx = Context::new();
         ctx.push_frame(vec![Symbol::new("b"), Symbol::new("a")]);
         ctx.push_frame(vec![Symbol::new("a")]);
-        assert_eq!(&ctx.symbol_stack[1][0] as *const _,
-                   ctx.find_symbol("a").unwrap() as *const _)
+        assert_eq!(ctx.find_symbol("a").unwrap(), -3)
     }
 
     {
         let mut ctx = Context::new();
         ctx.push_frame(vec![Symbol::new("a")]);
         ctx.push_frame(vec![Symbol::new("b"), Symbol::new("a")]);
-        assert_eq!(&ctx.symbol_stack[1][1] as *const _,
-                   ctx.find_symbol("a").unwrap() as *const _)
+        assert_eq!(ctx.find_symbol("a").unwrap(), -3)
+    }
+
+    {
+        let mut ctx = Context::new();
+        ctx.arguments.push(Symbol::new("a1"));
+        ctx.arguments.push(Symbol::new("a2"));
+        ctx.push_frame(vec![Symbol::new("a")]);
+        ctx.push_frame(vec![Symbol::new("b"), Symbol::new("a")]);
+        assert_eq!(ctx.find_symbol("a1").unwrap(), 2);
+        assert_eq!(ctx.find_symbol("a2").unwrap(), 1);
     }
 }
 
