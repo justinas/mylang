@@ -1,7 +1,7 @@
 use std::fmt;
 
 pub use super::lexer::{Delimiter, Keyword, Operator, Token, TokenAt};
-use self::expr::Expr;
+pub use self::expr::{Atom, Expr, Operation};
 use self::expr::parse_expr;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -11,7 +11,7 @@ pub struct AssignStmt {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct Block(Vec<Stmt>);
+pub struct Block(pub Vec<Stmt>);
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Conditional {
@@ -70,7 +70,7 @@ pub enum Stmt {
     While(WhileStmt),
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Type {
     Byte,
     Int,

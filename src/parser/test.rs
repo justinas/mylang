@@ -1,5 +1,5 @@
 use super::*;
-use super::expr::*;
+use super::expr::{parse_atom, parse_comparison, parse_logexpr, parse_product, parse_sum};
 
 #[cfg(test)]
 fn str_to_tokens(s: &str) -> Vec<Token> {

@@ -20,10 +20,9 @@ pub enum Expr {
 #[derive(Debug, Eq, PartialEq)]
 pub enum Operation {
     Add,
-    Sub,
-
     Div,
     Mul,
+    Sub,
 
     Lt,
     Lte,
