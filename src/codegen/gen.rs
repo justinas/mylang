@@ -36,11 +36,11 @@ impl Gen for Atom {
                 Ok(vec![Pushlw(sym_location as i64)])
             }
             Atom::Neg(ref e) => {
-                let mut v = (*e).gen(ctx)?;
+                let mut v = e.gen(ctx)?;
                 v.push(Neg);
                 Ok(v)
             }
-            _ => unimplemented!(),
+            Atom::PExpr(ref e) => e.gen(ctx),
         }
     }
 }
