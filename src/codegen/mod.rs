@@ -78,6 +78,14 @@ pub enum Instruction {
     Div,
     Mul,
 
+    // Comparison operations: pop 2, push 1
+    Eq,
+    Neq,
+    Lt,
+    Lte,
+    Gt,
+    Gte,
+
     // Logical operations: pop 2, push 1
     And,
     Or,
@@ -166,7 +174,10 @@ impl Function {
 
 impl Symbol {
     fn new<T: Into<String>>(name: T, typ: parser::Type) -> Self {
-        Symbol { name: name.into() , typ: typ}
+        Symbol {
+            name: name.into(),
+            typ: typ,
+        }
     }
 }
 

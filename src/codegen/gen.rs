@@ -58,9 +58,15 @@ impl Gen for Expr {
                     Operation::Mul => v.push(Mul),
                     Operation::Sub => v.push(Sub),
 
+                    Operation::Eq => v.push(Eq),
+                    Operation::Neq => v.push(Neq),
+                    Operation::Lt => v.push(Lt),
+                    Operation::Lte => v.push(Lte),
+                    Operation::Gt => v.push(Gt),
+                    Operation::Gte => v.push(Gte),
+
                     Operation::And => v.push(And),
                     Operation::Or => v.push(Or),
-                    _ => unimplemented!(),
                 }
                 Ok(v)
             }
