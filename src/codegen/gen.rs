@@ -154,7 +154,10 @@ impl Typed for Atom {
                     None => Err(Error::SymbolNotFound(id.clone())),
                 }
             }
-            Atom::Ident(..) => unimplemented!(),
+            Atom::Ident(ref id) => {
+                let sym = ctx.find_symbol(&id).ok_or(Error::SymbolNotFound(id.clone()))?;
+                Ok(sym.typ)
+            }
             Atom::Neg(ref e) => {
                 match e.typ(ctx) {
                     t @ Ok(Type::Byte) |
