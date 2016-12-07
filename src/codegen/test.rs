@@ -131,6 +131,12 @@ fn test_gen_expr() {
         assert_eq!(e.gen(&mut Default::default()).unwrap(),
                    vec![Pushiw(234), Pushiw(456), Mul]);
     }
+    {
+        let e = Expr::Atom(Atom::Ident("ab".into()));
+        let mut ctx = Context::new();
+        ctx.push_frame(vec![Symbol::new("cd", Type::Int), Symbol::new("ab", Type::Byte)]);
+        assert_eq!(e.gen(&mut ctx).unwrap(), vec![Pushlw(-2)]);
+    }
 }
 
 #[test]

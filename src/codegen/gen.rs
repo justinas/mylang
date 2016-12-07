@@ -30,6 +30,11 @@ impl Gen for Atom {
                 }
                 Ok(v)
             }
+            Atom::Ident(ref id) => {
+                let sym_location = ctx.find_symbol_location(&id)
+                    .ok_or(Error::SymbolNotFound(id.clone()))?;
+                Ok(vec![Pushlw(sym_location as i64)])
+            }
             Atom::Neg(ref e) => {
                 let mut v = (*e).gen(ctx)?;
                 v.push(Neg);
