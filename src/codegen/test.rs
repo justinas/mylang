@@ -152,6 +152,19 @@ fn test_gen_stmt_assign() {
 }
 
 #[test]
+fn test_gen_stmt_block() {
+    {
+        let e = Expr::Bin(Box::new(Expr::Atom(Atom::Const("234".into()))),
+                          Box::new(Expr::Atom(Atom::Const("456".into()))),
+                          Operation::Mul);
+        let s = Stmt::Expr(e);
+        let v1 = s.gen(&mut Default::default()).unwrap();
+        let v2 = Stmt::Block(parser::Block(vec![s])).gen(&mut Default::default()).unwrap();
+        assert_eq!(v1, v2);
+    }
+}
+
+#[test]
 fn test_gen_stmt_expr() {
     {
         let e = Expr::Bin(Box::new(Expr::Atom(Atom::Const("234".into()))),

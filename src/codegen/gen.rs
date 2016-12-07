@@ -78,6 +78,21 @@ impl Gen for Stmt {
                 v.push(Poplw(sym_loc as i64));
                 Ok(v)
             }
+            Stmt::Block(ref block) => {
+                ctx.push_frame(vec![]);
+                let mut v = vec![];
+                for stmt in block.0.iter() {
+                    match stmt.gen(ctx) {
+                        Ok(slice) => v.extend_from_slice(&slice),
+                        e @ Err(..) => {
+                            ctx.pop_frame();
+                            return e;
+                        }
+                    }
+                }
+                ctx.pop_frame();
+                Ok(v)
+            }
             Stmt::Expr(ref e) => {
                 let mut v = e.gen(ctx)?;
 
