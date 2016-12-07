@@ -63,6 +63,20 @@ impl<'a> Context<'a> {
     pub fn push_symbol(&mut self, symbol: Symbol) {
         self.symbol_stack.last_mut().unwrap().push(symbol)
     }
+
+    // Peek the top frame.
+    //
+    // PANICS: if there are no frames in the stack.
+    pub fn top_frame(&mut self) -> &Vec<Symbol> {
+        self.symbol_stack.last().unwrap()
+    }
+    
+    // Peek the top frame mutably.
+    //
+    // PANICS: if there are no frames in the stack.
+    pub fn top_frame_mut(&mut self) -> &mut Vec<Symbol> {
+        self.symbol_stack.last_mut().unwrap()
+    }
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -117,59 +131,6 @@ pub enum Marker {
 pub struct Symbol {
     pub name: String,
     pub typ: parser::Type,
-}
-
-impl Function {
-    pub fn new(item: parser::FnItem) -> Result<Self, Error> {
-        let mut func = Function { locals: HashMap::new() };
-        func.resolve_locals(item)?;
-        Ok(func)
-    }
-
-    fn add_local(&mut self, name: &str, typ: parser::Type) -> Result<(), Error> {
-        match self.locals.entry(name.into()) {
-            Entry::Occupied(_) => return Err(Error::VariableRedefined(name.into())),
-            Entry::Vacant(e) => {
-                e.insert(Variable { typ: typ });
-            }
-        }
-        Ok(())
-    }
-
-    fn add_locals_from_block(&mut self, block: &parser::Block) -> Result<(), Error> {
-        for stmt in &block.0 {
-            match *stmt {
-                parser::Stmt::Block(ref b) => {
-                    self.add_locals_from_block(b)?;
-                }
-                parser::Stmt::Decl(ref d) => {
-                    self.add_local(&d.ident, d.typ.clone())?;
-                }
-                parser::Stmt::If(ref i) => {
-                    self.add_locals_from_block(&i._if.block)?;
-                    for c in &i._eifs {
-                        self.add_locals_from_block(&c.block)?;
-                    }
-                    if let Some(ref c) = i._else {
-                        self.add_locals_from_block(c)?;
-                    }
-                }
-                parser::Stmt::While(ref w) => {
-                    self.add_locals_from_block(&w.0.block);
-                }
-                _ => (),
-            }
-        }
-        Ok(())
-    }
-
-    fn resolve_locals(&mut self, item: parser::FnItem) -> Result<(), Error> {
-        for p in &item.params {
-            self.add_local(&p.name, p.typ.clone());
-        }
-        self.add_locals_from_block(&item.block)?;
-        Ok(())
-    }
 }
 
 impl Symbol {

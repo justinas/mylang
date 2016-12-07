@@ -1,5 +1,6 @@
 use super::super::parser::{self, Atom, Expr, Operation, Stmt, Type};
-use super::{Context, Function, Gen, Symbol, Typed};
+use super::{Context, Gen, Symbol, Typed};
+use super::Error;
 use super::Instruction;
 use super::Instruction::*;
 use super::Marker;
@@ -11,63 +12,6 @@ macro_rules! empty_fn {
     ($name:expr, $params:expr, $ret:expr) => {
         parser::FnItem{ block: parser::Block(vec![]), name: $name.into(), params: $params, ret: $ret}
     };
-}
-
-#[test]
-fn test_resolve_locals() {
-    {
-        let mut item = parser::FnItem {
-            block: parser::Block(vec![]),
-            name: "a".into(),
-            params: vec![],
-            ret: parser::Type::Void,
-        };
-        assert_eq!(Function::new(item).unwrap().locals.len(), 0);
-    }
-
-    {
-        let mut item = parser::FnItem {
-            block: parser::Block(vec![]),
-            name: "a".into(),
-            params: vec![parser::FnParam {
-                             name: "l1".into(),
-                             typ: parser::Type::Int,
-                         },
-                         parser::FnParam {
-                             name: "l2".into(),
-                             typ: parser::Type::Byte,
-                         }],
-            ret: parser::Type::Void,
-        };
-        let f = Function::new(item).unwrap();
-        assert_eq!(f.locals.len(), 2);
-        assert_eq!(f.locals["l1"].typ, parser::Type::Int);
-        assert_eq!(f.locals["l2"].typ, parser::Type::Byte);
-    }
-
-    {
-        let mut item = parser::FnItem {
-            block: parser::Block(vec![
-                parser::Stmt::Block(parser::Block(vec![])),
-                parser::Stmt::Decl(parser::DeclStmt{ident: "l3".into(), typ: parser::Type::Int}),
-            ]),
-            name: "a".into(),
-            params: vec![parser::FnParam {
-                             name: "l1".into(),
-                             typ: parser::Type::Int,
-                         },
-                         parser::FnParam {
-                             name: "l2".into(),
-                             typ: parser::Type::Byte,
-                         }],
-            ret: parser::Type::Void,
-        };
-        let f = Function::new(item).unwrap();
-        assert_eq!(f.locals.len(), 3);
-        assert_eq!(f.locals["l1"].typ, parser::Type::Int);
-        assert_eq!(f.locals["l2"].typ, parser::Type::Byte);
-        assert_eq!(f.locals["l3"].typ, parser::Type::Int);
-    }
 }
 
 #[test]
@@ -156,6 +100,23 @@ fn test_gen_stmt_assign() {
                     Pushr,
                     Poplw(-2)]);
 }
+
+#[test]
+fn test_gen_stmt_decl() {
+    let e = Stmt::Decl(parser::DeclStmt {
+        ident: "abc".into(),
+        typ: Type::Int,
+    });
+
+    let mut ctx = Context::new();
+    ctx.push_frame(vec![Symbol::new("abc", Type::Int)]);
+    assert_eq!(e.gen(&mut ctx).unwrap_err(),
+               Error::VariableRedeclared("abc".into()));
+    ctx.top_frame_mut().clear();
+    assert_eq!(e.gen(&mut ctx).unwrap(), vec![Pushiw(0)]);
+    assert_eq!(ctx.top_frame().len(), 1);
+}
+
 
 #[test]
 fn test_gen_stmt_block() {

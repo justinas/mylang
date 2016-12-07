@@ -4,6 +4,7 @@ use super::Error;
 use super::Instruction;
 use super::Instruction::*;
 use super::Marker;
+use super::Symbol;
 
 pub trait Gen {
     fn gen(&self, &mut Context) -> Result<Vec<Instruction>, Error>;
@@ -103,6 +104,16 @@ impl Gen for Stmt {
                 }
                 ctx.pop_frame();
                 Ok(v)
+            }
+            Stmt::Decl(ref stmt) => {
+                if stmt.typ == Type::Void || stmt.typ == Type::Num {
+                    return Err(Error::InvalidType(stmt.typ));
+                }
+                if let Some(_) = ctx.top_frame().iter().find(|s| s.name == stmt.ident) {
+                    return Err(Error::VariableRedeclared(stmt.ident.clone()));
+                }
+                ctx.top_frame_mut().push(Symbol::new(stmt.ident.clone(), stmt.typ));
+                Ok(vec![Pushiw(0)])
             }
             Stmt::Expr(ref e) => {
                 let mut v = e.gen(ctx)?;

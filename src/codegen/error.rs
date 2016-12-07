@@ -5,5 +5,5 @@ pub enum Error {
     RequiresNArgs(usize),
     SymbolNotFound(String),
     TypesIncompatible(Type, Type),
-    VariableRedefined(String),
+    VariableRedeclared(String),
 }
