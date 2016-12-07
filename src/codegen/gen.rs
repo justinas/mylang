@@ -66,6 +66,18 @@ impl Gen for Expr {
 impl Gen for Stmt {
     fn gen(&self, ctx: &mut Context) -> Result<Vec<Instruction>, Error> {
         match *self {
+            Stmt::Assign(ref stmt) => {
+                let sym_loc = ctx.find_symbol_location(&stmt.ident)
+                    .ok_or(Error::SymbolNotFound(stmt.ident.clone()))?;
+                let typ = stmt.expr.typ(ctx)?;
+                let mut v = stmt.expr.gen(ctx)?;
+                let sym = ctx.find_symbol(&stmt.ident).unwrap();
+                if !typ.compatible_with(&sym.typ) {
+                    return Err(Error::TypesIncompatible(typ, sym.typ));
+                }
+                v.push(Poplw(sym_loc as i64));
+                Ok(v)
+            }
             Stmt::Expr(ref e) => {
                 let mut v = e.gen(ctx)?;
 

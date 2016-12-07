@@ -84,26 +84,30 @@ fn test_typed() {
 
 #[test]
 fn test_symbol_stack() {
+    macro_rules! sym {
+        ($name:expr) => (Symbol::new($name, Type::Void));
+    }
+
     {
         let mut ctx = Context::new();
-        ctx.push_frame(vec![Symbol::new("b"), Symbol::new("a")]);
-        ctx.push_frame(vec![Symbol::new("a")]);
+        ctx.push_frame(vec![sym!("b"), sym!("a")]);
+        ctx.push_frame(vec![sym!("a")]);
         assert_eq!(ctx.find_symbol_location("a").unwrap(), -3)
     }
 
     {
         let mut ctx = Context::new();
-        ctx.push_frame(vec![Symbol::new("a")]);
-        ctx.push_frame(vec![Symbol::new("b"), Symbol::new("a")]);
+        ctx.push_frame(vec![sym!("a")]);
+        ctx.push_frame(vec![sym!("b"), sym!("a")]);
         assert_eq!(ctx.find_symbol_location("a").unwrap(), -3)
     }
 
     {
         let mut ctx = Context::new();
-        ctx.arguments.push(Symbol::new("a1"));
-        ctx.arguments.push(Symbol::new("a2"));
-        ctx.push_frame(vec![Symbol::new("a")]);
-        ctx.push_frame(vec![Symbol::new("b"), Symbol::new("a")]);
+        ctx.arguments.push(sym!("a1"));
+        ctx.arguments.push(sym!("a2"));
+        ctx.push_frame(vec![sym!("a")]);
+        ctx.push_frame(vec![sym!("b"), sym!("a")]);
         assert_eq!(ctx.find_symbol_location("a1").unwrap(), 2);
         assert_eq!(ctx.find_symbol_location("a2").unwrap(), 1);
     }
@@ -127,6 +131,24 @@ fn test_gen_expr() {
         assert_eq!(e.gen(&mut Default::default()).unwrap(),
                    vec![Pushiw(234), Pushiw(456), Mul]);
     }
+}
+
+#[test]
+fn test_gen_stmt_assign() {
+    let e = Stmt::Assign(parser::AssignStmt {
+        ident: "abc".into(),
+        expr: Expr::Atom(Atom::FnCall("def".into(), vec![])),
+    });
+
+    let fns = &[empty_fn!("def", vec![], Type::Int)];
+    let mut ctx = Context::new();
+    ctx.functions = fns;
+    ctx.push_frame(vec![Symbol::new("hi", Type::Void), Symbol::new("abc", Type::Int)]);
+    assert_eq!(e.gen(&mut ctx).unwrap(),
+               vec![__Marker(Marker::PushCurPC),
+                    __Marker(Marker::Call("def".into())),
+                    Pushr,
+                    Poplw(-2)]);
 }
 
 #[test]

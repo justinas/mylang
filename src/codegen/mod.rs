@@ -85,9 +85,11 @@ pub enum Instruction {
     // Binary negation: pop 1, push 1
     Neg,
 
+    // Pop to local word at (fp+i64): pop 1
+    Poplw(i64),
     // Pop to nowhere: pop 1
     Popn,
-    // Push local word: push 1
+    // Push local word from (fp+i64): push 1
     Pushlw(i64),
     // Push immediate word: push 1
     Pushiw(i64),
@@ -106,6 +108,7 @@ pub enum Marker {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Symbol {
     pub name: String,
+    pub typ: parser::Type,
 }
 
 impl Function {
@@ -162,8 +165,8 @@ impl Function {
 }
 
 impl Symbol {
-    fn new<T: Into<String>>(name: T) -> Self {
-        Symbol { name: name.into() }
+    fn new<T: Into<String>>(name: T, typ: parser::Type) -> Self {
+        Symbol { name: name.into() , typ: typ}
     }
 }
 
