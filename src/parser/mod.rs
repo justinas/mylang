@@ -74,7 +74,21 @@ pub enum Stmt {
 pub enum Type {
     Byte,
     Int,
+    Num,
     Void,
+}
+
+impl Type {
+    pub fn compatible_with(&self, other: &Type) -> bool {
+        match (*self, *other) {
+            (t1, t2) if t1 == t2 => true,
+            (Type::Byte, Type::Num) => true,
+            (Type::Int, Type::Num) => true,
+            (Type::Num, Type::Byte) => true,
+            (Type::Num, Type::Int) => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, Eq, PartialEq)]

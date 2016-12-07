@@ -4,19 +4,35 @@ use super::parser;
 pub use self::error::Error;
 pub use self::gen::{Gen, Typed};
 
-#[derive(Debug, Default, Eq, PartialEq)]
-pub struct Context {
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct Context<'a> {
     arguments: Vec<Symbol>,
+    functions: &'a [parser::FnItem],
     symbol_stack: Vec<Vec<Symbol>>,
 }
 
-impl Context {
+impl<'a> Context<'a> {
     pub fn new() -> Self {
         Default::default()
     }
 
-    // Finds the symbol offset on stack.
-    pub fn find_symbol(&self, name: &str) -> Option<isize> {
+    pub fn find_function(&self, name: &str) -> Option<&parser::FnItem> {
+        self.functions.iter().find(|f| f.name == name)
+    }
+
+    pub fn find_symbol(&self, name: &str) -> Option<&Symbol> {
+        if let Some(p) = self.arguments.iter().rev().find(|s| s.name == name) {
+            return Some(p);
+        }
+        self.symbol_stack
+            .iter()
+            .rev()
+            .flat_map(|frame| frame.iter().rev())
+            .find(|s| s.name == name)
+    }
+
+    // Finds the symbol offset off the frame.
+    pub fn find_symbol_location(&self, name: &str) -> Option<isize> {
         if let Some(p) = self.arguments.iter().rev().position(|s| s.name == name) {
             return Some((p + 1) as isize);
         }
@@ -54,7 +70,7 @@ pub struct Function {
     locals: HashMap<String, Variable>,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Instruction {
     // Math operations: pop 2, push 1
     Add,
@@ -71,11 +87,23 @@ pub enum Instruction {
 
     // Pop to nowhere: pop 1
     Popn,
+    // Push local word: push 1
+    Pushlw(i64),
     // Push immediate word: push 1
     Pushiw(i64),
+    // Push return value: push 1
+    Pushr,
+
+    __Marker(Marker),
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Marker {
+    Call(String),
+    PushCurPC,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Symbol {
     pub name: String,
 }
