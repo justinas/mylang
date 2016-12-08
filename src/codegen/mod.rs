@@ -82,11 +82,6 @@ impl<'a> Context<'a> {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
-pub struct Function {
-    locals: HashMap<String, Variable>,
-}
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Instruction {
     // Math operations: pop 2, push 1
