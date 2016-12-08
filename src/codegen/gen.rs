@@ -95,6 +95,15 @@ impl Gen for Expr {
     }
 }
 
+impl Gen for super::FnItem {
+    fn gen(&self, ctx: &mut Context) -> Result<Vec<Instruction>, Error> {
+        let mut v = vec![Fpush];
+        v.extend_from_slice(&self.block.gen(ctx)?);
+        v.push(Fpop);
+        Ok(v)
+    }
+}
+
 impl Gen for Stmt {
     fn gen(&self, ctx: &mut Context) -> Result<Vec<Instruction>, Error> {
         match *self {
@@ -139,6 +148,20 @@ impl Gen for Stmt {
                     }
                 }
                 v.push(Popn);
+                Ok(v)
+            }
+            Stmt::Return(None) => {
+                match ctx.functions[ctx.this_fn.unwrap()].ret {
+                    Type::Void => Ok(vec![Ret]),
+                    t => Err(Error::TypesIncompatible(Type::Void, t)),
+                }
+            }
+            Stmt::Return(Some(ref e)) => {
+                let mut v = match (ctx.functions[ctx.this_fn.unwrap()].ret, e.typ(ctx)?) {
+                    (t1, t2) if t1.compatible_with(&t2) => e.gen(ctx)?,
+                    (t1, t2) => return Err(Error::TypesIncompatible(t1, t2)),
+                };
+                v.push(Retw);
                 Ok(v)
             }
             Stmt::While(WhileStmt(ref conditional)) => {

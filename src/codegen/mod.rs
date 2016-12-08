@@ -1,16 +1,17 @@
 use std::collections::hash_map::{Entry, HashMap};
 
 use super::parser;
+pub use super::parser::FnItem;
 pub use self::error::Error;
 pub use self::gen::{Gen, Typed};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Context<'a> {
     arguments: Vec<Symbol>,
-    functions: &'a [parser::FnItem],
+    functions: &'a [FnItem],
     loop_depth: usize,
     symbol_stack: Vec<Vec<Symbol>>,
-    this: Option<&'a parser::FnItem>,
+    this_fn: Option<usize>,
 }
 
 impl<'a> Context<'a> {
@@ -18,7 +19,7 @@ impl<'a> Context<'a> {
         Default::default()
     }
 
-    pub fn find_function(&self, name: &str) -> Option<&parser::FnItem> {
+    pub fn find_function(&self, name: &str) -> Option<&FnItem> {
         self.functions.iter().find(|f| f.name == name)
     }
 
@@ -108,6 +109,11 @@ pub enum Instruction {
 
     // Binary negation: pop 1, push 1
     Neg,
+
+    // Set FP to SP
+    Fpush,
+    // Restore previous FP
+    Fpop,
 
     // Pop to local word at (fp+i64): pop 1
     Poplw(i64),

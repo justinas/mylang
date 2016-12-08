@@ -174,7 +174,7 @@ fn test_parse_stmt() {
 
         let res = parse_stmt(tokens);
         let stmt = res.0.unwrap();
-        let expected = Stmt::Return(Expr::Atom(Atom::Ident("abc".into())));
+        let expected = Stmt::Return(Some(Expr::Atom(Atom::Ident("abc".into()))));
         assert_eq!(stmt, expected);
     }
 

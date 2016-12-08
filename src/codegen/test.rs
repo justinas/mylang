@@ -132,6 +132,38 @@ fn test_gen_stmt_block() {
 }
 
 #[test]
+fn test_gen_stmt_return() {
+    {
+        let fns = &[empty_fn!("abc", Type::Void)];
+        let mut ctx = Context::new();
+        ctx.functions = fns;
+        ctx.this_fn = Some(0);
+        assert_eq!(Stmt::Return(None).gen(&mut ctx).unwrap(), vec![Ret]);
+
+        let fns = &[empty_fn!("abc", Type::Int)];
+        let mut ctx = Context::new();
+        ctx.functions = fns;
+        ctx.this_fn = Some(0);
+        assert!(Stmt::Return(None).gen(&mut ctx).is_err());
+    }
+
+    {
+        let s = Stmt::Return(Some(Expr::Atom(Atom::Const("123".into()))));
+        let fns = &[empty_fn!("abc", Type::Void)];
+        let mut ctx = Context::new();
+        ctx.functions = fns;
+        ctx.this_fn = Some(0);
+        assert!(s.gen(&mut ctx).is_err());
+
+        let fns = &[empty_fn!("abc", Type::Int)];
+        let mut ctx = Context::new();
+        ctx.functions = fns;
+        ctx.this_fn = Some(0);
+        assert_eq!(s.gen(&mut ctx).unwrap(), vec![Pushiw(123), Retw]);
+    }
+}
+
+#[test]
 fn test_gen_stmt_expr() {
     {
         let e = Expr::Bin(Box::new(Expr::Atom(Atom::Const("234".into()))),
