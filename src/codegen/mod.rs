@@ -8,7 +8,9 @@ pub use self::gen::{Gen, Typed};
 pub struct Context<'a> {
     arguments: Vec<Symbol>,
     functions: &'a [parser::FnItem],
+    loop_depth: usize,
     symbol_stack: Vec<Vec<Symbol>>,
+    this: Option<&'a parser::FnItem>,
 }
 
 impl<'a> Context<'a> {
@@ -70,7 +72,7 @@ impl<'a> Context<'a> {
     pub fn top_frame(&mut self) -> &Vec<Symbol> {
         self.symbol_stack.last().unwrap()
     }
-    
+
     // Peek the top frame mutably.
     //
     // PANICS: if there are no frames in the stack.
@@ -115,15 +117,23 @@ pub enum Instruction {
     Pushlw(i64),
     // Push immediate word: push 1
     Pushiw(i64),
-    // Push return value: push 1
+    // Push returned value: push 1
     Pushr,
+
+    // Return void
+    Ret,
+    // Return value: pop 1
+    Retw,
 
     __Marker(Marker),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Marker {
+    Break(u64), // u64 = loop depth
     Call(String),
+    Jmprel(i64),
+    Jmpzrel(i64),
     PushCurPC,
 }
 

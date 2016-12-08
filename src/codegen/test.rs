@@ -1,4 +1,4 @@
-use super::super::parser::{self, Atom, Expr, Operation, Stmt, Type};
+use super::super::parser::{self, Atom, Block, Conditional, Expr, Operation, Stmt, Type, WhileStmt};
 use super::{Context, Gen, Symbol, Typed};
 use super::Error;
 use super::Instruction;
@@ -140,6 +140,22 @@ fn test_gen_stmt_expr() {
         let s = Stmt::Expr(e);
         assert_eq!(s.gen(&mut Default::default()).unwrap(),
                    vec![Pushiw(234), Pushiw(456), Mul, Popn]);
+    }
+}
+
+#[test]
+fn test_gen_stmt_while() {
+    {
+        let s = Stmt::While(WhileStmt(Conditional {
+            block: Block(vec![Stmt::Break, Stmt::Break]),
+            cond: Expr::Atom(Atom::Const("1".into())),
+        }));
+        assert_eq!(s.gen(&mut Default::default()).unwrap(),
+                   vec![Pushiw(1),
+                        __Marker(Marker::Jmpzrel(4)),
+                        __Marker(Marker::Jmpzrel(3)),
+                        __Marker(Marker::Jmpzrel(2)),
+                        __Marker(Marker::Jmprel(-4))]);
     }
 }
 

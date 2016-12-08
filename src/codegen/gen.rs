@@ -1,4 +1,6 @@
-use super::super::parser::{Atom, Expr, Operation, Stmt, Type};
+use std::i64;
+
+use super::super::parser::{Atom, Block, Expr, Operation, Stmt, Type, WhileStmt};
 use super::Context;
 use super::Error;
 use super::Instruction;
@@ -46,6 +48,24 @@ impl Gen for Atom {
     }
 }
 
+impl Gen for Block {
+    fn gen(&self, ctx: &mut Context) -> Result<Vec<Instruction>, Error> {
+        ctx.push_frame(vec![]);
+        let mut v = vec![];
+        for stmt in self.0.iter() {
+            match stmt.gen(ctx) {
+                Ok(slice) => v.extend_from_slice(&slice),
+                e @ Err(..) => {
+                    ctx.pop_frame();
+                    return e;
+                }
+            }
+        }
+        ctx.pop_frame();
+        Ok(v)
+    }
+}
+
 impl Gen for Expr {
     fn gen(&self, ctx: &mut Context) -> Result<Vec<Instruction>, Error> {
         match *self {
@@ -90,21 +110,13 @@ impl Gen for Stmt {
                 v.push(Poplw(sym_loc as i64));
                 Ok(v)
             }
-            Stmt::Block(ref block) => {
-                ctx.push_frame(vec![]);
-                let mut v = vec![];
-                for stmt in block.0.iter() {
-                    match stmt.gen(ctx) {
-                        Ok(slice) => v.extend_from_slice(&slice),
-                        e @ Err(..) => {
-                            ctx.pop_frame();
-                            return e;
-                        }
-                    }
+            Stmt::Break => {
+                match ctx.loop_depth {
+                    0 => Err(Error::BreakOutOfContext),
+                    _ => Ok(vec![__Marker(Marker::Break(ctx.loop_depth as u64))]),
                 }
-                ctx.pop_frame();
-                Ok(v)
             }
+            Stmt::Block(ref block) => block.gen(ctx),
             Stmt::Decl(ref stmt) => {
                 if stmt.typ == Type::Void || stmt.typ == Type::Num {
                     return Err(Error::InvalidType(stmt.typ));
@@ -127,6 +139,52 @@ impl Gen for Stmt {
                     }
                 }
                 v.push(Popn);
+                Ok(v)
+            }
+            Stmt::While(WhileStmt(ref conditional)) => {
+                ctx.loop_depth += 1;
+                let mut v = vec![];
+
+                // generate cond expr
+                let cond_expr = match (&conditional.cond).gen(ctx) {
+                    Ok(c) => c,
+                    e @ Err(_) => {
+                        ctx.loop_depth -= 1;
+                        return e;
+                    }
+                };
+                v.extend_from_slice(&cond_expr);
+
+                // mark the jump-if-false instruction
+                v.push(__Marker(Marker::Jmpzrel(i64::MAX)));
+                let jump_end_idx = v.len() - 1;
+
+                // generate block
+                let block = match (&conditional.block).gen(ctx) {
+                    Ok(b) => b,
+                    e @ Err(_) => {
+                        ctx.loop_depth -= 1;
+                        return e;
+                    }
+                };
+                v.extend_from_slice(&block);
+
+                // repeat loop
+                let loop_start_rel = -(v.len() as i64);
+                v.push(__Marker(Marker::Jmprel(loop_start_rel)));
+
+                // set jump-if-false to one-past-end
+                let len = v.len();
+                v[jump_end_idx] = __Marker(Marker::Jmpzrel(len as i64 - jump_end_idx as i64));
+
+                // Resolve any breaks
+                for (pos, ins) in v.iter_mut().enumerate() {
+                    if *ins == __Marker(Marker::Break(ctx.loop_depth as u64)) {
+                        let to_past_end = len - pos;
+                        *ins = __Marker(Marker::Jmpzrel(to_past_end as i64));
+                    }
+                }
+                ctx.loop_depth -= 1;
                 Ok(v)
             }
             _ => unimplemented!(),
