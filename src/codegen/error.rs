@@ -3,6 +3,7 @@ use super::super::parser::Type;
 pub enum Error {
     BreakOutOfContext,
     InvalidType(Type),
+    NoMainFunction,
     RequiresNArgs(usize),
     SymbolNotFound(String),
     TypesIncompatible(Type, Type),

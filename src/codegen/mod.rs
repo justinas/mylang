@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::hash_map::{Entry, HashMap};
 
 use super::parser;
@@ -5,8 +6,33 @@ pub use super::parser::FnItem;
 pub use self::error::Error;
 pub use self::gen::{Gen, Typed};
 
+pub fn parse_program(funcs: &[FnItem]) -> Result<Vec<Instruction>, Error> {
+    let mut funcs = funcs.to_vec();
+    funcs.sort_by(|a, b| if a.name == "main" {
+        Ordering::Less
+    } else {
+        Ordering::Equal
+    });
+    if funcs[0].name != "main" {
+        return Err(Error::NoMainFunction);
+    }
+
+    let mut v = vec![];
+    for (pos, f) in funcs.iter().enumerate() {
+        let mut ctx = Context {
+            arguments: f.params.iter().map(|p| Symbol::new(p.name.clone(), p.typ)).collect(),
+            functions: &funcs,
+            loop_depth: 1,
+            symbol_stack: vec![],
+            this_fn: Some(pos),
+        };
+        v.extend_from_slice(&f.gen(&mut ctx)?);
+    }
+    Ok(v)
+}
+
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct Context<'a> {
+struct Context<'a> {
     arguments: Vec<Symbol>,
     functions: &'a [FnItem],
     loop_depth: usize,
@@ -135,7 +161,7 @@ pub enum Marker {
     Call(String),
     Jmprel(i64),
     Jmpzrel(i64),
-    PushCurPC,
+    PushRetAddr, // Push return address
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

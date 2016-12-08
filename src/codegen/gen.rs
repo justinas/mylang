@@ -23,7 +23,7 @@ impl Gen for Atom {
                 for a in args.iter() {
                     v.extend_from_slice(&a.gen(ctx)?);
                 }
-                v.push(__Marker(Marker::PushCurPC));
+                v.push(__Marker(Marker::PushRetAddr));
                 v.push(__Marker(Marker::Call(id.clone())));
                 for a in args.iter() {
                     v.push(Popn)
@@ -97,9 +97,13 @@ impl Gen for Expr {
 
 impl Gen for super::FnItem {
     fn gen(&self, ctx: &mut Context) -> Result<Vec<Instruction>, Error> {
-        let mut v = vec![Fpush];
+        let mut v = vec![];
         v.extend_from_slice(&self.block.gen(ctx)?);
-        v.push(Fpop);
+        match v.last() {
+            Some(&Ret) | Some(&Retw) => return Ok(v),
+            _ => (),
+        }
+        v.push(Ret);
         Ok(v)
     }
 }

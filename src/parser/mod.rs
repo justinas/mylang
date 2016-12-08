@@ -4,34 +4,34 @@ pub use super::lexer::{Delimiter, Keyword, Operator, Token, TokenAt};
 pub use self::expr::{Atom, Expr, Operation};
 use self::expr::parse_expr;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct AssignStmt {
     pub ident: String,
     pub expr: expr::Expr,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Block(pub Vec<Stmt>);
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Conditional {
     pub block: Block,
     pub cond: Expr,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DeclStmt {
     pub ident: String,
     pub typ: Type,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FnParam {
     pub name: String,
     pub typ: Type,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FnItem {
     pub block: Block,
     pub name: String,
@@ -51,14 +51,14 @@ impl fmt::Display for FnItem {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct IfStmt {
     pub _if: Conditional,
     pub _eifs: Vec<Conditional>,
     pub _else: Option<Block>,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Stmt {
     Assign(AssignStmt),
     Break,
@@ -91,7 +91,7 @@ impl Type {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct WhileStmt(pub Conditional);
 
 pub fn parse(tokens: &[Token]) -> Result<Vec<FnItem>, ()> {

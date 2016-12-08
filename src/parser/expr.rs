@@ -2,7 +2,7 @@ use super::{Delimiter, Keyword, Operator, Token, TokenAt};
 
 // expr == logexpr
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Atom {
     Const(String),
     FnCall(String, Vec<Expr>),
@@ -11,13 +11,13 @@ pub enum Atom {
     PExpr(Box<Expr>),
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Expr {
     Atom(Atom),
     Bin(Box<Expr>, Box<Expr>, Operation),
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Operation {
     Add,
     Div,

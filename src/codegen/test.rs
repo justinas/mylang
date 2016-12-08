@@ -1,16 +1,18 @@
-use super::super::parser::{self, Atom, Block, Conditional, Expr, Operation, Stmt, Type, WhileStmt};
+use super::super::parser::{self, Atom, Block, Conditional, Expr, FnItem, Operation, Stmt, Type,
+                           WhileStmt};
 use super::{Context, Gen, Symbol, Typed};
 use super::Error;
 use super::Instruction;
 use super::Instruction::*;
 use super::Marker;
+use super::parse_program;
 
 macro_rules! empty_fn {
     ($name:expr, $ret:expr) => {
-        parser::FnItem{ block: parser::Block(vec![]), name: $name.into(), params: vec![], ret: $ret}
+        FnItem{ block: parser::Block(vec![]), name: $name.into(), params: vec![], ret: $ret}
     };
     ($name:expr, $params:expr, $ret:expr) => {
-        parser::FnItem{ block: parser::Block(vec![]), name: $name.into(), params: $params, ret: $ret}
+        FnItem{ block: parser::Block(vec![]), name: $name.into(), params: $params, ret: $ret}
     };
 }
 
@@ -95,7 +97,7 @@ fn test_gen_stmt_assign() {
     ctx.functions = fns;
     ctx.push_frame(vec![Symbol::new("hi", Type::Void), Symbol::new("abc", Type::Int)]);
     assert_eq!(e.gen(&mut ctx).unwrap(),
-               vec![__Marker(Marker::PushCurPC),
+               vec![__Marker(Marker::PushRetAddr),
                     __Marker(Marker::Call("def".into())),
                     Pushr,
                     Poplw(-2)]);
@@ -206,7 +208,7 @@ fn test_gen_fncall() {
         let e = Expr::Atom(Atom::FnCall("abc".into(), vec![Expr::Atom(Atom::Const("234".into()))]));
         assert_eq!(e.gen(&mut ctx).unwrap(),
                    vec![Pushiw(234),
-                        __Marker(Marker::PushCurPC),
+                        __Marker(Marker::PushRetAddr),
                         __Marker(Marker::Call("abc".into())),
                         Popn,
                         Pushr]);
@@ -219,6 +221,43 @@ fn test_gen_fncall() {
         ctx.functions = fns;
         let e = Expr::Atom(Atom::FnCall("abc".into(), vec![]));
         assert_eq!(e.gen(&mut ctx).unwrap(),
-                   vec![__Marker(Marker::PushCurPC), __Marker(Marker::Call("abc".into()))]);
+                   vec![__Marker(Marker::PushRetAddr), __Marker(Marker::Call("abc".into()))]);
+    }
+}
+
+#[test]
+fn test_integration() {
+    {
+        // Equiv to:
+        // fn a() int {
+        //     return 1;
+        // }
+        // fn main() int {
+        //     return a();
+        // }
+        //
+        let program = &[FnItem {
+                            block:
+                                Block(vec![Stmt::Return(Some(Expr::Atom(Atom::Const("1".into()))))]),
+                            name: "a".into(),
+                            params: vec![],
+                            ret: Type::Int,
+                        },
+                        FnItem {
+                            block: Block(vec![Stmt::Return(Some(Expr::Atom(Atom::FnCall("a".into(),
+                                                                              vec![]))))]),
+                            name: "main".into(),
+                            params: vec![],
+                            ret: Type::Int,
+                        }];
+        assert_eq!(parse_program(program).unwrap(),
+                   vec![// main start
+                        __Marker(Marker::PushRetAddr),
+                        __Marker(Marker::Call("a".into())),
+                        Pushr,
+                        Retw,
+                        // a start
+                        Pushiw(1),
+                        Retw,]);
     }
 }
