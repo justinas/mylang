@@ -5,6 +5,7 @@ use super::parser;
 pub use super::parser::FnItem;
 pub use self::error::Error;
 pub use self::gen::{Gen, Typed};
+use self::Instruction::*;
 
 pub fn parse_program(funcs: &[FnItem]) -> Result<Vec<Instruction>, Error> {
     let mut funcs = funcs.to_vec();
@@ -17,7 +18,9 @@ pub fn parse_program(funcs: &[FnItem]) -> Result<Vec<Instruction>, Error> {
         return Err(Error::NoMainFunction);
     }
 
+    let mut func_locations = HashMap::new();
     let mut v = vec![];
+
     for (pos, f) in funcs.iter().enumerate() {
         let mut ctx = Context {
             arguments: f.params.iter().map(|p| Symbol::new(p.name.clone(), p.typ)).collect(),
@@ -26,8 +29,25 @@ pub fn parse_program(funcs: &[FnItem]) -> Result<Vec<Instruction>, Error> {
             symbol_stack: vec![],
             this_fn: Some(pos),
         };
+        func_locations.insert(&f.name, v.len());
         v.extend_from_slice(&f.gen(&mut ctx)?);
     }
+
+    // Resolve markers
+    for (pos, ins) in v.iter_mut().enumerate() {
+        *ins = match *ins {
+            __Marker(ref mut m) => {
+                match *m {
+                    Marker::Break(_) => unreachable!(),
+                    Marker::Call(ref s) => Call(func_locations[s] as u64),
+                    Marker::Jmprel(offset) => Jmp((pos as i64 + offset) as u64),
+                    Marker::Jmpzrel(offset) => Jmpz((pos as i64 + offset) as u64),
+                }
+            }
+            ref i => i.clone(),
+        }
+    }
+
     Ok(v)
 }
 
@@ -131,10 +151,17 @@ pub enum Instruction {
     // Binary negation: pop 1, push 1
     Neg,
 
+    // Call: push ret addr & jmp
+    Call(u64),
     // Set FP to SP
     Fpush,
     // Restore previous FP
     Fpop,
+
+    // Absolute jump
+    Jmp(u64),
+    // Absolute jump-if-zero
+    Jmpz(u64),
 
     // Pop to local word at (fp+i64): pop 1
     Poplw(i64),
@@ -161,7 +188,6 @@ pub enum Marker {
     Call(String),
     Jmprel(i64),
     Jmpzrel(i64),
-    PushRetAddr, // Push return address
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

@@ -97,10 +97,7 @@ fn test_gen_stmt_assign() {
     ctx.functions = fns;
     ctx.push_frame(vec![Symbol::new("hi", Type::Void), Symbol::new("abc", Type::Int)]);
     assert_eq!(e.gen(&mut ctx).unwrap(),
-               vec![__Marker(Marker::PushRetAddr),
-                    __Marker(Marker::Call("def".into())),
-                    Pushr,
-                    Poplw(-2)]);
+               vec![__Marker(Marker::Call("def".into())), Pushr, Poplw(-2)]);
 }
 
 #[test]
@@ -207,11 +204,7 @@ fn test_gen_fncall() {
         ctx.functions = fns;
         let e = Expr::Atom(Atom::FnCall("abc".into(), vec![Expr::Atom(Atom::Const("234".into()))]));
         assert_eq!(e.gen(&mut ctx).unwrap(),
-                   vec![Pushiw(234),
-                        __Marker(Marker::PushRetAddr),
-                        __Marker(Marker::Call("abc".into())),
-                        Popn,
-                        Pushr]);
+                   vec![Pushiw(234), __Marker(Marker::Call("abc".into())), Popn, Pushr]);
     }
 
     {
@@ -221,7 +214,7 @@ fn test_gen_fncall() {
         ctx.functions = fns;
         let e = Expr::Atom(Atom::FnCall("abc".into(), vec![]));
         assert_eq!(e.gen(&mut ctx).unwrap(),
-                   vec![__Marker(Marker::PushRetAddr), __Marker(Marker::Call("abc".into()))]);
+                   vec![__Marker(Marker::Call("abc".into()))]);
     }
 }
 
@@ -252,8 +245,7 @@ fn test_integration() {
                         }];
         assert_eq!(parse_program(program).unwrap(),
                    vec![// main start
-                        __Marker(Marker::PushRetAddr),
-                        __Marker(Marker::Call("a".into())),
+                        Call(3),
                         Pushr,
                         Retw,
                         // a start

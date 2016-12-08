@@ -1,13 +1,7 @@
-fn dothis(x int, y byte) int {
-    a = 1/3;
-    return a;
+fn a() int {
+    return 1;
 }
 
-fn main() {
-    var a byte;
-    a = (2+2) / 4 <= 3;
-    while dothis(1, 2, a+1) <= 3 {
-        a = a -  1;
-        break;
-    }
+fn main() int {
+    return a() + 1;
 }

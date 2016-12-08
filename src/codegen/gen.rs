@@ -23,7 +23,6 @@ impl Gen for Atom {
                 for a in args.iter() {
                     v.extend_from_slice(&a.gen(ctx)?);
                 }
-                v.push(__Marker(Marker::PushRetAddr));
                 v.push(__Marker(Marker::Call(id.clone())));
                 for a in args.iter() {
                     v.push(Popn)

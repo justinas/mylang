@@ -1,10 +1,9 @@
 use std::fs::File;
 use std::io::{stderr, Write};
 
-fn pretty_print(tokens: &Vec<lexer::TokenAt>) {
-    println!("Tokens:");
-    for t in tokens {
-        println!("    {:?}", t);
+fn pretty_print(v: &Vec<codegen::Instruction>) {
+    for (pos, ins) in v.iter().enumerate() {
+        println!("{:>04}: {:?}", pos, ins);
     }
 }
 
@@ -36,7 +35,6 @@ fn main() {
     let tokens_at = match lexer.lex() {
         Ok(t) => t,
         Err((t, e)) => {
-            pretty_print(&t);
             write!(stderr(), "{}", e);
             return;
         }
@@ -51,8 +49,11 @@ fn main() {
         }
     };
 
-    for f in &funcs {
-        println!("{}", f);
+    match codegen::parse_program(&funcs) {
+        Ok(v) => pretty_print(&v),
+        Err(e) => {
+            write!(stderr(), "{:?}", e);
+        }
     }
 }
 
