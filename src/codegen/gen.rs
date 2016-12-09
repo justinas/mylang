@@ -1,4 +1,5 @@
 use std::i64;
+use std::iter;
 
 use super::super::parser::{Atom, Block, Expr, Operation, Stmt, Type, WhileStmt};
 use super::Context;
@@ -153,6 +154,36 @@ impl Gen for Stmt {
                 v.push(Popn);
                 Ok(v)
             }
+            Stmt::If(ref stmt) => {
+                let mut v = vec![];
+
+                for conditional in iter::once(&stmt._if).chain(stmt._eifs.iter()) {
+                    // gen cond
+                    v.extend_from_slice(&conditional.cond.gen(ctx)?);
+                    v.push(__Marker(Marker::Jmpzrel(i64::MAX)));
+                    let skip_block_marker_idx = v.len() - 1;
+
+                    // gen block
+                    v.extend_from_slice(&conditional.block.gen(ctx)?);
+                    // mark skip-if-stmt
+                    v.push(__Marker(Marker::Jmprel(i64::MAX - 1)));
+                    v[skip_block_marker_idx] =
+                        __Marker(Marker::Jmpzrel((v.len() - skip_block_marker_idx) as i64));
+                }
+
+                if let Some(ref block) = stmt._else {
+                    v.extend_from_slice(&block.gen(ctx)?);
+                }
+
+                // Resolve jump-past-if-stmt markers
+                let len = v.len();
+                for (pos, ins) in v.iter_mut().enumerate() {
+                    if *ins == __Marker(Marker::Jmprel(i64::MAX - 1)) {
+                        *ins = __Marker(Marker::Jmprel(len as i64 - pos as i64))
+                    }
+                }
+                Ok(v)
+            }
             Stmt::Return(None) => {
                 match ctx.functions[ctx.this_fn.unwrap()].ret {
                     Type::Void => Ok(vec![Ret]),
@@ -213,7 +244,6 @@ impl Gen for Stmt {
                 ctx.loop_depth -= 1;
                 Ok(v)
             }
-            _ => unimplemented!(),
         }
     }
 }

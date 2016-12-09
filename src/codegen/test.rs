@@ -1,5 +1,5 @@
-use super::super::parser::{self, Atom, Block, Conditional, Expr, FnItem, Operation, Stmt, Type,
-                           WhileStmt};
+use super::super::parser::{self, Atom, Block, Conditional, Expr, FnItem, IfStmt, Operation, Stmt,
+                           Type, WhileStmt};
 use super::{Context, Gen, Symbol, Typed};
 use super::Error;
 use super::Instruction;
@@ -173,6 +173,37 @@ fn test_gen_stmt_expr() {
                    vec![Pushiw(234), Pushiw(456), Mul, Popn]);
     }
 }
+
+#[test]
+fn test_gen_stmt_if() {
+    {
+        let s = Stmt::If(IfStmt {
+            _if: Conditional {
+                block: Block(vec![Stmt::Expr(Expr::Atom(Atom::Const("2".into())))]),
+                cond: Expr::Atom(Atom::Const("1".into())),
+            },
+            _eifs: vec![Conditional {
+                            block: Block(vec![Stmt::Expr(Expr::Atom(Atom::Const("4".into())))]),
+                            cond: Expr::Atom(Atom::Const("3".into())),
+                        }],
+            _else: Some(Block(vec![Stmt::Expr(Expr::Atom(Atom::Const("5".into())))])),
+        });
+        assert_eq!(s.gen(&mut Default::default()).unwrap(),
+                   vec![Pushiw(1),
+                        __Marker(Marker::Jmpzrel(4)),
+                        Pushiw(2),
+                        Popn,
+                        __Marker(Marker::Jmprel(8)),
+                        Pushiw(3),
+                        __Marker(Marker::Jmpzrel(4)),
+                        Pushiw(4),
+                        Popn,
+                        __Marker(Marker::Jmprel(3)),
+                        Pushiw(5),
+                        Popn]);
+    }
+}
+
 
 #[test]
 fn test_gen_stmt_while() {
