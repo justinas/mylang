@@ -162,10 +162,6 @@ pub enum Instruction {
 
     // Call: push ret addr & jmp
     Call(u64),
-    // Set FP to SP
-    Fpush,
-    // Restore previous FP
-    Fpop,
 
     // Absolute jump
     Jmp(u64),
