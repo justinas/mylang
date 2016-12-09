@@ -274,7 +274,7 @@ fn test_integration() {
                             params: vec![],
                             ret: Type::Int,
                         }];
-        assert_eq!(parse_program(program).unwrap(),
+        assert_eq!(parse_program(program).unwrap().instructions,
                    vec![// main start
                         Call(3),
                         Pushr,
