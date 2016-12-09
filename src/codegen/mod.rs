@@ -7,7 +7,13 @@ pub use self::error::Error;
 pub use self::gen::{Gen, Typed};
 use self::Instruction::*;
 
-pub fn parse_program(funcs: &[FnItem]) -> Result<Vec<Instruction>, Error> {
+#[derive(Debug)]
+pub struct Program {
+    pub func_locations: HashMap<String, usize>,
+    pub instructions: Vec<Instruction>,
+}
+
+pub fn parse_program(funcs: &[FnItem]) -> Result<Program, Error> {
     let mut funcs = funcs.to_vec();
     funcs.sort_by(|a, b| if a.name == "main" {
         Ordering::Less
@@ -29,7 +35,7 @@ pub fn parse_program(funcs: &[FnItem]) -> Result<Vec<Instruction>, Error> {
             symbol_stack: vec![],
             this_fn: Some(pos),
         };
-        func_locations.insert(&f.name, v.len());
+        func_locations.insert(f.name.clone(), v.len());
         v.extend_from_slice(&f.gen(&mut ctx)?);
     }
 
@@ -48,7 +54,10 @@ pub fn parse_program(funcs: &[FnItem]) -> Result<Vec<Instruction>, Error> {
         }
     }
 
-    Ok(v)
+    Ok(Program {
+        func_locations: func_locations,
+        instructions: v,
+    })
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
