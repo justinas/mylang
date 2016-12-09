@@ -61,7 +61,7 @@ pub fn parse_program(funcs: &[FnItem]) -> Result<Program, Error> {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-struct Context<'a> {
+pub struct Context<'a> {
     arguments: Vec<Symbol>,
     functions: &'a [FnItem],
     loop_depth: usize,
@@ -70,15 +70,15 @@ struct Context<'a> {
 }
 
 impl<'a> Context<'a> {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Default::default()
     }
 
-    pub fn find_function(&self, name: &str) -> Option<&FnItem> {
+    fn find_function(&self, name: &str) -> Option<&FnItem> {
         self.functions.iter().find(|f| f.name == name)
     }
 
-    pub fn find_symbol(&self, name: &str) -> Option<&Symbol> {
+    fn find_symbol(&self, name: &str) -> Option<&Symbol> {
         if let Some(p) = self.arguments.iter().rev().find(|s| s.name == name) {
             return Some(p);
         }
@@ -90,7 +90,7 @@ impl<'a> Context<'a> {
     }
 
     // Finds the symbol offset off the frame.
-    pub fn find_symbol_location(&self, name: &str) -> Option<isize> {
+    fn find_symbol_location(&self, name: &str) -> Option<isize> {
         if let Some(p) = self.arguments.iter().rev().position(|s| s.name == name) {
             return Some((p + 1) as isize);
         }
@@ -106,33 +106,33 @@ impl<'a> Context<'a> {
     // Pop the top frame of the stack.
     //
     // PANICS: if there are no frames in the stack.
-    pub fn pop_frame(&mut self) -> Vec<Symbol> {
+    fn pop_frame(&mut self) -> Vec<Symbol> {
         self.symbol_stack.pop().unwrap()
     }
 
     // Push a new frame of locals (say, when a new block is allocated)
-    pub fn push_frame(&mut self, frame: Vec<Symbol>) {
+    fn push_frame(&mut self, frame: Vec<Symbol>) {
         self.symbol_stack.push(frame);
     }
 
     // Pushes a symbol to the last frame.
     //
     // PANICS: if there are no frames in the stack.
-    pub fn push_symbol(&mut self, symbol: Symbol) {
+    fn push_symbol(&mut self, symbol: Symbol) {
         self.symbol_stack.last_mut().unwrap().push(symbol)
     }
 
     // Peek the top frame.
     //
     // PANICS: if there are no frames in the stack.
-    pub fn top_frame(&mut self) -> &Vec<Symbol> {
+    fn top_frame(&mut self) -> &Vec<Symbol> {
         self.symbol_stack.last().unwrap()
     }
 
     // Peek the top frame mutably.
     //
     // PANICS: if there are no frames in the stack.
-    pub fn top_frame_mut(&mut self) -> &mut Vec<Symbol> {
+    fn top_frame_mut(&mut self) -> &mut Vec<Symbol> {
         self.symbol_stack.last_mut().unwrap()
     }
 }
