@@ -201,6 +201,7 @@ pub enum Instruction {
     /// then pops the return address and sets IP to it.
     Retw,
 
+    #[doc(hidden)]
     __Marker(Marker),
 }
 
