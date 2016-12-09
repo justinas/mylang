@@ -140,48 +140,65 @@ impl<'a> Context<'a> {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Instruction {
     // Math operations: pop 2, push 1
+    /// Pops 2 words and pushes their mathematical sum.
     Add,
+    /// Pops 2 words and pushes their mathematical subtraction.
     Sub,
+    /// Pops 2 words and pushes their mathematical division.
     Div,
+    /// Pops 2 words and pushes their mathematical product.
     Mul,
 
     // Comparison operations: pop 2, push 1
+    /// Pops 2 words and pushes 1 if they are equal, 0 otherwise
     Eq,
+    /// Pops 2 words and pushes 0 if they are equal, 1 otherwise
     Neq,
+    /// Pops 2 words and pushes 1 if the first one is less than the second one, 0 otherwise
     Lt,
+    /// Pops 2 words and pushes 1 if the first one is less or equal to the second one, 0 otherwise
     Lte,
+    /// Pops 2 words and pushes 1 if the first one is greater than the second one, 0 otherwise
     Gt,
+    /// Pops 2 words and pushes 1 if the first one is greater or equal to the second one, 0 otherwise
     Gte,
 
     // Logical operations: pop 2, push 1
+    /// Pops 2 words and pushes their logical AND.
     And,
+    /// Pops 2 words and pushes their logical OR.
     Or,
 
     // Binary negation: pop 1, push 1
+    /// Pops 1 word and pushes back its logical negation
     Neg,
 
-    // Call: push ret addr & jmp
+    /// Calls the function stored in the given address
     Call(u64),
 
     // Absolute jump
+    /// Sets the instruction pointer to the value given
     Jmp(u64),
-    // Absolute jump-if-zero
+    /// Pops 1 word off the stack.
+    /// If the word is equal to zero, acts as Jmp. Else, acts as a no-op.
     Jmpz(u64),
 
-    // Pop to local word at (fp+i64): pop 1
+    /// Pops 1 word off the stack and stores it into [fp+x],
+    /// where fp is frame pointer
     Poplw(i64),
-    // Pop to nowhere: pop 1
+    /// Pops 1 word off the stack and throws it away
     Popn,
-    // Push local word from (fp+i64): push 1
+    /// Pushes a local word from [fp+x]
     Pushlw(i64),
-    // Push immediate word: push 1
+    /// Pushes an immediate with the value of x onto the stack
     Pushiw(i64),
-    // Push returned value: push 1
+    /// Pushes the value of return register onto the stack
     Pushr,
 
-    // Return void
+    /// Pops the return address off the stack and sets IP to it.
     Ret,
-    // Return value: pop 1
+    /// Pops a word off the stack, stores it into the return register,
+    /// then pops the return address and sets IP to it.
     Retw,
 
     __Marker(Marker),
