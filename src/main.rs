@@ -6,7 +6,7 @@ fn pretty_print(program: &codegen::Program) {
     let reverse_fn_map: HashMap<usize, String> =
         program.func_locations.iter().map(|(name, pos)| (*pos, name.clone())).collect();
     for (pos, ins) in program.instructions.iter().enumerate() {
-        print!("{:>04}: {:40}", pos, format!("{:?}", ins));
+        print!("{:>04}: {:30}", pos, format!("{:?}", ins));
         if let Some(func_name) = reverse_fn_map.get(&pos) {
             print!("# {}", func_name);
         }
