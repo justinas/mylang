@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use std::collections::hash_map::{Entry, HashMap};
+use std::mem;
 
 use super::parser;
 pub use super::parser::FnItem;
@@ -138,7 +139,10 @@ impl<'a> Context<'a> {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[repr(u16)]
 pub enum Instruction {
+    Nop,
+
     // Math operations: pop 2, push 1
     /// Pops 2 words and pushes their mathematical sum.
     Add,
@@ -203,6 +207,36 @@ pub enum Instruction {
 
     #[doc(hidden)]
     __Marker(Marker),
+}
+
+
+impl Instruction {
+    pub fn decode(op: u16, data: u64) -> Result<Self, ()> {
+        let max_valid_opcode = unsafe { mem::transmute_copy(&Instruction::Retw) };
+        if op > max_valid_opcode {
+            return Err(());
+        }
+        let mut ins: Instruction = unsafe { mem::zeroed() };
+        let ptr: &mut (u16, u64) = unsafe { mem::transmute(&mut ins) };
+        ptr.0 = op;
+        ptr.1 = data;
+        Ok(ins)
+    }
+
+    pub fn encode(&self) -> (u16, u64) {
+        if let __Marker(_) = *self {
+            unreachable!()
+        }
+        let (_, data): (u16, u64) = unsafe { mem::transmute_copy(self) };
+        (self.opcode(), data)
+    }
+
+    fn opcode(&self) -> u16 {
+        if let __Marker(_) = *self {
+            unreachable!()
+        }
+        unsafe { mem::transmute_copy(self) }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

@@ -250,6 +250,28 @@ fn test_gen_fncall() {
 }
 
 #[test]
+fn test_opcode() {
+    assert_eq!(Nop.opcode(), 0);
+    assert_eq!(Add.opcode(), 1);
+    assert_eq!(Call(::std::u64::MAX).opcode(), 14);
+}
+
+#[test]
+fn test_encode() {
+    assert_eq!(Nop.encode(), (0, 0));
+    assert_eq!(Add.encode(), (1, 0));
+    assert_eq!(Call(::std::u64::MAX).encode(), (14, ::std::u64::MAX));
+}
+
+#[test]
+fn test_decode() {
+    assert_eq!(Instruction::decode(0, 0).unwrap(), Nop);
+    assert_eq!(Instruction::decode(1, 0).unwrap(), Add);
+    assert_eq!(Instruction::decode(14, ::std::u64::MAX).unwrap(),
+               Call(::std::u64::MAX));
+}
+
+#[test]
 fn test_integration() {
     {
         // Equiv to:
