@@ -7,6 +7,13 @@ fn fib(x int) int {
     return fib(x - 1) + fib(x - 2);
 }
 
+fn gcd(x int, y int) int {
+    if y == 0 {
+        return x;
+    }
+    return gcd(y, x - (x / y * y));
+}
+
 fn main() int {
-    return fib(22);
+    return gcd(64, 128);
 }
