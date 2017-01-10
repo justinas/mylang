@@ -56,12 +56,24 @@ fn main() {
         }
     };
 
-    match codegen::parse_program(&funcs) {
-        Ok(v) => pretty_print(&v),
+    let p = match codegen::parse_program(&funcs) {
+        Ok(p) => {
+            pretty_print(&p);
+            p
+        }
         Err(e) => {
             write!(stderr(), "{:?}", e);
+            return;
         }
-    }
+    };
+
+    println!("");
+    println!("-----------------");
+    println!("");
+    let mut bytes = vec![];
+    p.encode(&mut bytes).unwrap();
+    let mut machine = vm::Machine::new(&bytes);
+    println!("{}", machine.run());
 }
 
 pub mod codegen;
