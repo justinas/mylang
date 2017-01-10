@@ -54,6 +54,17 @@ impl Machine {
     pub fn step(&mut self) -> bool {
         let bounds = (self.ip as usize) * 10..(self.ip as usize + 1) * 10;
         match Instruction::from_bytes(&self.program[bounds]).unwrap() {
+            Call(addr) => {
+                let next = self.ip + 1;
+                self.push(next);
+
+                let sp = self.sp;
+                self.fps.push(sp);
+
+                self.ip = addr;
+                return true;
+            }
+            Nop => {}
             Poplw(offset) => {
                 let fp = self.fp() as i64;
                 let idx = (fp + offset) as usize;
@@ -71,6 +82,17 @@ impl Machine {
             Pushr => {
                 let val = self.rx;
                 self.push(val);
+            }
+            Ret => {
+                self.ip = self.pop();
+                let new_fp = self.fps.pop().unwrap();
+                return new_fp != STACK_SIZE as u64;
+            }
+            Retw => {
+                self.rx = self.pop();
+                self.ip = self.pop();
+                let new_fp = self.fps.pop().unwrap();
+                return new_fp != STACK_SIZE as u64;
             }
             _ => unimplemented!(),
         };
