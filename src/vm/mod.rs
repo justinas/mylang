@@ -125,12 +125,14 @@ impl Machine {
                 self.push(val);
             }
             Ret => {
+                self.sp = *self.fps.last().unwrap();
                 self.ip = self.pop();
                 let new_fp = self.fps.pop().unwrap();
                 return new_fp != STACK_SIZE as u64;
             }
             Retw => {
                 self.rx = self.pop();
+                self.sp = *self.fps.last().unwrap();
                 let new_fp = self.fps.pop().unwrap();
                 if new_fp == STACK_SIZE as u64 {
                     return false;
