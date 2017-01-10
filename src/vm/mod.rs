@@ -40,8 +40,9 @@ impl Machine {
     }
 
     fn pop(&mut self) -> u64 {
+        let val = *self.head();
         self.sp += 1;
-        *self.head()
+        val
     }
 
     fn push(&mut self, n: u64) {
