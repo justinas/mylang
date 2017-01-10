@@ -76,7 +76,6 @@ fn test_vm_retw() {
     assert_eq!(m.step(), false);
 
     assert_eq!(m.rx, 42); // should set the return reg
-    assert_eq!(m.ip, 0xDEAD); // should return to the address
     assert_eq!(m.fps.len(), 0); // should pop a frame pointer
 }
 
@@ -116,5 +115,71 @@ fn test_arithmetic() {
         m.step();
         assert_eq!(m.sp, STACK_SIZE as u64 - 1);
         assert_eq!(*m.head(), 34 * 7);
+    }
+}
+
+#[test]
+fn test_eq() {
+    {
+        let mut m = vm_with_ins(vec![Pushiw(12), Pushiw(34), Eq]);
+        m.step();
+        m.step();
+        m.step();
+        assert_eq!(m.sp, STACK_SIZE as u64 - 1);
+        assert_eq!(*m.head(), 0);
+    }
+
+    {
+        let mut m = vm_with_ins(vec![Pushiw(12), Pushiw(12), Eq]);
+        m.step();
+        m.step();
+        m.step();
+        assert_eq!(m.sp, STACK_SIZE as u64 - 1);
+        assert_eq!(*m.head(), 1);
+    }
+}
+
+#[test]
+fn test_neq() {
+    {
+        let mut m = vm_with_ins(vec![Pushiw(12), Pushiw(34), Neq]);
+        m.step();
+        m.step();
+        m.step();
+        assert_eq!(m.sp, STACK_SIZE as u64 - 1);
+        assert_eq!(*m.head(), 1);
+    }
+
+    {
+        let mut m = vm_with_ins(vec![Pushiw(12), Pushiw(12), Neq]);
+        m.step();
+        m.step();
+        m.step();
+        assert_eq!(m.sp, STACK_SIZE as u64 - 1);
+        assert_eq!(*m.head(), 0);
+    }
+}
+
+#[test]
+fn test_jmp() {
+    let mut m = vm_with_ins(vec![Jmp(4)]);
+    m.step();
+    assert_eq!(m.ip, 4);
+}
+
+#[test]
+fn test_jmpz() {
+    {
+        let mut m = vm_with_ins(vec![Pushiw(1234), Jmpz(4)]);
+        m.step();
+        m.step();
+        assert_eq!(m.ip, 2);
+    }
+
+    {
+        let mut m = vm_with_ins(vec![Pushiw(0), Jmpz(4)]);
+        m.step();
+        m.step();
+        assert_eq!(m.ip, 4);
     }
 }

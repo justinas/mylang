@@ -27,6 +27,12 @@ impl Machine {
         }
     }
 
+    // Runs the program to completion and returns RX
+    pub fn run(mut self) -> u64 {
+        while self.step() {}
+        self.rx
+    }
+
     fn fp(&self) -> u64 {
         *self.fps.last().unwrap()
     }
@@ -70,6 +76,15 @@ impl Machine {
                 let (right, left) = (self.pop(), self.pop());
                 self.push(left.wrapping_mul(right));
             }
+            Eq => {
+                let (right, left) = (self.pop(), self.pop());
+                self.push((left == right) as u64);
+            }
+            Neq => {
+                let (right, left) = (self.pop(), self.pop());
+                self.push((left != right) as u64);
+            }
+
             Call(addr) => {
                 let next = self.ip + 1;
                 self.push(next);
@@ -79,6 +94,16 @@ impl Machine {
 
                 self.ip = addr;
                 return true;
+            }
+            Jmp(addr) => {
+                self.ip = addr;
+                return true;
+            }
+            Jmpz(addr) => {
+                if self.pop() == 0 {
+                    self.ip = addr;
+                    return true;
+                }
             }
             Nop => {}
             Poplw(offset) => {
@@ -106,9 +131,12 @@ impl Machine {
             }
             Retw => {
                 self.rx = self.pop();
-                self.ip = self.pop();
                 let new_fp = self.fps.pop().unwrap();
-                return new_fp != STACK_SIZE as u64;
+                if new_fp == STACK_SIZE as u64 {
+                    return false;
+                }
+                self.ip = self.pop();
+                return true;
             }
             _ => unimplemented!(),
         };
