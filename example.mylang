@@ -1,3 +1,15 @@
+// Iterative factorial
+fn fact(x int) int {
+    var y int;
+    y = 1;
+    while x != 0 {
+        y = y * x;
+        x = x - 1;
+    }
+    return y;
+}
+
+// Recursive fibonacci
 fn fib(x int) int {
     if x == 0 {
         return 0;
@@ -7,6 +19,7 @@ fn fib(x int) int {
     return fib(x - 1) + fib(x - 2);
 }
 
+// Recursive GCD
 fn gcd(x int, y int) int {
     if y == 0 {
         return x;
@@ -15,5 +28,5 @@ fn gcd(x int, y int) int {
 }
 
 fn main() int {
-    return gcd(64, 128);
+    return fact(10);
 }
