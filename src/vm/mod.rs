@@ -54,6 +54,22 @@ impl Machine {
     pub fn step(&mut self) -> bool {
         let bounds = (self.ip as usize) * 10..(self.ip as usize + 1) * 10;
         match Instruction::from_bytes(&self.program[bounds]).unwrap() {
+            Add => {
+                let (right, left) = (self.pop(), self.pop());
+                self.push(left.wrapping_add(right));
+            }
+            Sub => {
+                let (right, left) = (self.pop(), self.pop());
+                self.push(left.wrapping_sub(right));
+            }
+            Div => {
+                let (right, left) = (self.pop(), self.pop());
+                self.push(left.wrapping_div(right));
+            }
+            Mul => {
+                let (right, left) = (self.pop(), self.pop());
+                self.push(left.wrapping_mul(right));
+            }
             Call(addr) => {
                 let next = self.ip + 1;
                 self.push(next);

@@ -79,3 +79,42 @@ fn test_vm_retw() {
     assert_eq!(m.ip, 0xDEAD); // should return to the address
     assert_eq!(m.fps.len(), 0); // should pop a frame pointer
 }
+
+#[test]
+fn test_arithmetic() {
+    {
+        let mut m = vm_with_ins(vec![Pushiw(12), Pushiw(34), Add]);
+        m.step();
+        m.step();
+        m.step();
+        assert_eq!(m.sp, STACK_SIZE as u64 - 1);
+        assert_eq!(*m.head(), 12 + 34);
+    }
+
+    {
+        let mut m = vm_with_ins(vec![Pushiw(12), Pushiw(34), Sub]);
+        m.step();
+        m.step();
+        m.step();
+        assert_eq!(m.sp, STACK_SIZE as u64 - 1);
+        assert_eq!(*m.head(), 12u64.wrapping_sub(34));
+    }
+
+    {
+        let mut m = vm_with_ins(vec![Pushiw(34), Pushiw(7), Div]);
+        m.step();
+        m.step();
+        m.step();
+        assert_eq!(m.sp, STACK_SIZE as u64 - 1);
+        assert_eq!(*m.head(), 34 / 7);
+    }
+
+    {
+        let mut m = vm_with_ins(vec![Pushiw(34), Pushiw(7), Mul]);
+        m.step();
+        m.step();
+        m.step();
+        assert_eq!(m.sp, STACK_SIZE as u64 - 1);
+        assert_eq!(*m.head(), 34 * 7);
+    }
+}
