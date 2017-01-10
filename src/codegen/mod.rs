@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use std::collections::hash_map::{Entry, HashMap};
+use std::io;
 use std::mem;
 
 use super::parser;
@@ -8,10 +9,23 @@ pub use self::error::Error;
 pub use self::gen::{Gen, Typed};
 use self::Instruction::*;
 
-#[derive(Debug)]
+extern crate byteorder;
+use self::byteorder::{ByteOrder, LittleEndian};
+
+#[derive(Debug, Default)]
 pub struct Program {
     pub func_locations: HashMap<String, usize>,
     pub instructions: Vec<Instruction>,
+}
+
+impl Program {
+    fn encode<W: io::Write>(&self, writer: &mut W) -> Result<(), io::Error> {
+        for ins in &self.instructions {
+            let buf = ins.to_bytes();
+            try!(writer.write(&buf));
+        }
+        Ok(())
+    }
 }
 
 pub fn parse_program(funcs: &[FnItem]) -> Result<Program, Error> {
@@ -236,6 +250,23 @@ impl Instruction {
             unreachable!()
         }
         unsafe { mem::transmute_copy(self) }
+    }
+
+    pub fn from_bytes(buf: &[u8]) -> Result<Self, ()> {
+        assert_eq!(buf.len(), 10);
+        Instruction::decode(LittleEndian::read_u16(&buf[0..2]),
+                            LittleEndian::read_u64(&buf[2..]))
+    }
+
+    pub fn to_bytes(&self) -> [u8; 10] {
+        if let __Marker(_) = *self {
+            unreachable!()
+        }
+        let (opcode, data) = self.encode();
+        let mut buf: [u8; 10] = Default::default();
+        LittleEndian::write_u16(&mut buf[0..2], opcode);
+        LittleEndian::write_u64(&mut buf[2..], data);
+        buf
     }
 }
 

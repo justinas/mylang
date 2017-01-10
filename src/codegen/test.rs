@@ -1,6 +1,6 @@
 use super::super::parser::{self, Atom, Block, Conditional, Expr, FnItem, IfStmt, Operation, Stmt,
                            Type, WhileStmt};
-use super::{Context, Gen, Symbol, Typed};
+use super::{Context, Gen, Program, Symbol, Typed};
 use super::Error;
 use super::Instruction;
 use super::Instruction::*;
@@ -269,6 +269,18 @@ fn test_decode() {
     assert_eq!(Instruction::decode(1, 0).unwrap(), Add);
     assert_eq!(Instruction::decode(14, ::std::u64::MAX).unwrap(),
                Call(::std::u64::MAX));
+}
+
+#[test]
+fn test_program_encode() {
+    let p = Program { instructions: vec![Nop, Call(::std::u64::MAX)], ..Default::default() };
+    let mut buf = vec![];
+    p.encode(&mut buf).unwrap();
+    assert_eq!(buf.len(), 20);
+    assert_eq!(Instruction::from_bytes(&buf[0..10]).unwrap(),
+               p.instructions[0]);
+    assert_eq!(Instruction::from_bytes(&buf[10..20]).unwrap(),
+               p.instructions[1]);
 }
 
 #[test]
