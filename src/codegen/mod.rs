@@ -19,7 +19,7 @@ pub struct Program {
 }
 
 impl Program {
-    fn encode<W: io::Write>(&self, writer: &mut W) -> Result<(), io::Error> {
+    pub fn encode<W: io::Write>(&self, writer: &mut W) -> Result<(), io::Error> {
         for ins in &self.instructions {
             let buf = ins.to_bytes();
             try!(writer.write(&buf));
