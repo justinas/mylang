@@ -84,6 +84,22 @@ impl Machine {
                 let (right, left) = (self.pop(), self.pop());
                 self.push((left != right) as u64);
             }
+            Gt => {
+                let (right, left) = (self.pop(), self.pop());
+                self.push((left > right) as u64);
+            }
+            Gte => {
+                let (right, left) = (self.pop(), self.pop());
+                self.push((left >= right) as u64);
+            }
+            Lt => {
+                let (right, left) = (self.pop(), self.pop());
+                self.push((left < right) as u64);
+            }
+            Lte => {
+                let (right, left) = (self.pop(), self.pop());
+                self.push((left <= right) as u64);
+            }
 
             Call(addr) => {
                 let next = self.ip + 1;
