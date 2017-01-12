@@ -1,7 +1,7 @@
 pub use super::codegen::Instruction;
 use super::codegen::Instruction::*;
 
-const STACK_SIZE: usize = 64;
+const STACK_SIZE: usize = 2048;
 
 #[derive(Debug)]
 pub struct Machine {
