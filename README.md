@@ -9,8 +9,10 @@ Has no: I/O, debugging facilities, compiler error messages (`Syntax error.` is a
 ## Here be dragons
 
 The code is written for a one-off university project.
-An old (pre 2018 edition) version of Rust is used,
-the code is not very Rusty and not very nice in general.
+2015 edition of Rust is used,
+although the project still compiles with 1.36.0
+(thank you, Rust stability guarantees!).
+The code is not very Rusty and not very nice in general.
 
 One test is failing for some reason.
 Can't be arsed to deal with that.
