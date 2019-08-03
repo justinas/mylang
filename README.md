@@ -2,7 +2,7 @@
 
 A very barebones programming language (lexer, parser, interpreter).
 
-Has: Arithmetic, loops, conditionals, functions, a single integer type (unsigned 64-bit).
+Has: Arithmetic, loops, conditionals, functions, two integer types (`byte` and `int` (unsigned 64-bit)).
 
 Has no: I/O, debugging facilities, compiler error messages (`Syntax error.` is all you get). Anything else, really.
 
